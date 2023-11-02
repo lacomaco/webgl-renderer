@@ -1,3 +1,4 @@
+import { GPGPU } from "./gpgpu";
 import { Triangle } from "./triangle";
 
 export class Laco3DRender {
@@ -7,6 +8,7 @@ export class Laco3DRender {
     adapter: GPUAdapter | null = null;
     device: GPUDevice | null = null;
     triangle: Triangle = new Triangle();
+    gpgpu: GPGPU = new GPGPU();
 
     constructor() {
         document.body.appendChild(this.canvas);
@@ -38,6 +40,42 @@ export class Laco3DRender {
         if(this.device){
             this.triangle.render(this.device, this.ctx);
         }
+    }
+
+    async testGPGPU() {
+        if(this.device === null){
+            return;
+        }
+        
+        const module = this.gpgpu.createModule(this.device as GPUDevice);
+        const pipeline = this.gpgpu.createPipeline(this.device as GPUDevice, module);
+        const workBuffer = this.gpgpu.createBuffer(this.device as GPUDevice);
+        const resultBuffer = this.gpgpu.createResultBuffer(this.device as GPUDevice);
+        const bindGroup = this.gpgpu.createBindGroup(this.device as GPUDevice, pipeline, workBuffer);
+
+        const encoder = this.device.createCommandEncoder({
+            label: 'gpgpu encoder',
+        });
+
+        {
+            const pass = encoder.beginComputePass();
+            pass.setPipeline(pipeline);
+            pass.setBindGroup(0, bindGroup);
+            pass.dispatchWorkgroups(this.gpgpu.input.length);
+            pass.end();
+        }
+
+        encoder.copyBufferToBuffer(workBuffer, 0, resultBuffer, 0, this.gpgpu.input.byteLength);
+        const commandBuffer = encoder.finish();
+        this.device.queue.submit([commandBuffer]);
+
+        await resultBuffer.mapAsync(GPUMapMode.READ);
+        const result = new Float32Array(resultBuffer.getMappedRange());
+        console.log('input',this.gpgpu.input);
+        console.log('result',result);
+
+        resultBuffer.unmap();
+    
     }
 
     resize(){
