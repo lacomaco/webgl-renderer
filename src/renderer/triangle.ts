@@ -1,5 +1,17 @@
 import { shader } from "../shader/shaders.wgsl";
 
+const rand = (min?:number, max?:number) => {
+    if (min === undefined) {
+      min = 0;
+      max = 1;
+    } else if (max === undefined) {
+      max = min;
+      min = 0;
+    }
+    return min + Math.random() * (max - min);
+  };
+   
+
 export class Triangle {
     createModule(device: GPUDevice){
         return device.createShaderModule({
@@ -40,37 +52,42 @@ export class Triangle {
 
     createBindGroup(device: GPUDevice,pipeline: GPURenderPipeline){
         const uniformBufferSize = 4*4 + 2*4 + 2*4;
-        const uniformBuffer = device.createBuffer({
-            size:uniformBufferSize,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        });
-
-        const uniformValues = new Float32Array(uniformBufferSize/4);
-        console.log(uniformBufferSize);
 
         const kColorOffset = 0;
-        const kScaleOffset = 4;
         const kOffsetOffset = 6;
+
+        const kNumObjects = 100;
+        const objectInfos = [];
+
+        for (let i = 0; i < kNumObjects; ++i) {
+          const uniformBuffer = device.createBuffer({
+            label: `uniforms for obj: ${i}`,
+            size: uniformBufferSize,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+          });
        
-        uniformValues.set([0, 1, 0, 1], kColorOffset);
-        uniformValues.set([-0.5, -0.25], kOffsetOffset);
-            // 자바스크립트의 Float32Array에 uniform 값을 설정함
-        const aspect = window.innerWidth / window.innerHeight;
-        uniformValues.set([0.5 / aspect, 0.5], kScaleOffset); // scale 설정
-
-        device.queue.writeBuffer(uniformBuffer,0,uniformValues); // cpu -> gpu 복사
-
-        const bindGroup = device.createBindGroup({
+          // uniform을 위해 사용할 값을 저장할 typedarray를 자바스크립트에서 만듬
+          const uniformValues = new Float32Array(uniformBufferSize / 4);
+          uniformValues.set([rand(), rand(), rand(), 1], kColorOffset);        // set the color
+          uniformValues.set([rand(-0.9, 0.9), rand(-0.9, 0.9)], kOffsetOffset);      // set the offset
+       
+          const bindGroup = device.createBindGroup({
+            label: `bind group for obj: ${i}`,
             layout: pipeline.getBindGroupLayout(0),
-            entries: [{
-                binding: 0,
-                resource: {
-                    buffer: uniformBuffer,
-                },
-            }],
-        });
+            entries: [
+              { binding: 0, resource: { buffer: uniformBuffer }},
+            ],
+          });
+       
+          objectInfos.push({
+            scale: rand(0.2, 0.5),
+            uniformBuffer,
+            uniformValues,
+            bindGroup,
+          });
+        }
 
-        return bindGroup;
+        return objectInfos;
     }
 
     render(device: GPUDevice, ctx: GPUCanvasContext){
@@ -81,16 +98,22 @@ export class Triangle {
 
         const module = this.createModule(device);
         const pipeline = this.createPipeline(device,module);
-        const bindGroup = this.createBindGroup(device,pipeline);
+        const bindGroups = this.createBindGroup(device,pipeline);
         const renderPassDescription = this.createRenderPassDescriptior(ctx);
 
-        {
-            const pass = encoder.beginRenderPass(renderPassDescription);
-            pass.setPipeline(pipeline);
-            pass.setBindGroup(0, bindGroup);
-            pass.draw(3);
-            pass.end();
-        }
+        const aspect = window.innerWidth / window.innerHeight;
+        const kScaleOffset = 2;
+
+        const pass = encoder.beginRenderPass(renderPassDescription);
+        pass.setPipeline(pipeline);
+
+        for (const {scale, bindGroup, uniformBuffer, uniformValues} of bindGroups) {
+            uniformValues.set([scale / aspect, scale], kScaleOffset); // set the scale
+            device.queue.writeBuffer(uniformBuffer, 0, uniformValues);
+             pass.setBindGroup(0, bindGroup);
+             pass.draw(3);  // call our vertex shader 3 times
+          }
+          pass.end();
 
         const commandBuffer = encoder.finish();
         device.queue.submit([commandBuffer]);
