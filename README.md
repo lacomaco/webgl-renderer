@@ -1,2 +1,3 @@
-﻿# laco3DRenderer
+﻿# GPU 프로그래밍 튜토리얼
+
 
