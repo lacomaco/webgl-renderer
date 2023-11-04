@@ -1,3 +1,5 @@
+import { basicShader } from "./shader";
+
 // https://gpuweb.github.io/types/interfaces/GPUAdapter.html <- WebGPU API 문서
 export class State {
     canvas: HTMLCanvasElement = document.createElement('canvas');
@@ -13,6 +15,8 @@ export class State {
         x: window.innerWidth,
         y: window.innerHeight
     };
+
+    renderPipeline: GPURenderPipeline | null = null;
 
     constructor() {
         this.initialize();
@@ -46,6 +50,46 @@ export class State {
         this.ctx?.configure({
             device: this.device,
             format: navigator.gpu.getPreferredCanvasFormat()
+        });
+
+        const shader = this.device.createShaderModule({
+            label: 'shader',
+            code: basicShader
+        });
+
+        const renderPipelineLayout = this.device.createPipelineLayout({
+            label:'hi',
+            bindGroupLayouts: []
+        })
+
+        this.renderPipeline = this.device.createRenderPipeline({
+            label: 'render pipeline',
+            layout: renderPipelineLayout,
+            vertex: {
+                module: shader,
+                entryPoint: 'vs_main',
+                buffers: []
+            },
+            fragment: {
+                module: shader,
+                entryPoint: 'fs_main',
+                targets: [{
+                    format: navigator.gpu.getPreferredCanvasFormat(),
+                }]
+            },
+            primitive: {
+                topology: 'triangle-list',
+                frontFace: 'ccw',
+                cullMode: 'back',
+                unclippedDepth: false,
+            },
+            depthStencil: undefined,
+            multisample: {
+                count:1,
+                mask: 0xffffffff,
+                alphaToCoverageEnabled: false,
+            },
+            // remove the multiview property
         });
 
         setTimeout(()=>{
@@ -86,7 +130,7 @@ export class State {
             return;
         }
 
-        commandEncoder.beginRenderPass({
+        const renderPass = commandEncoder.beginRenderPass({
             label: 'render pass',
             colorAttachments: [{
                 view,
@@ -96,9 +140,19 @@ export class State {
             }],
         });
 
+        
+
         if(!this.queue){
             return;
         }
+
+        if(!this.renderPipeline){
+            return;
+        }
+
+        renderPass.setPipeline(this.renderPipeline);
+        renderPass.draw(3,1,0,0);
+        renderPass.end();
 
         const commandBuffer = commandEncoder.finish();
 
