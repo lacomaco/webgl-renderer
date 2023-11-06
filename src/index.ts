@@ -1,3 +1,4 @@
-import { State } from "./renderer/state";
+import { Renderer } from "./renderer/renderer";
 
-const render = new State();
+const renderer = new Renderer();
+renderer.render();
