@@ -4,18 +4,23 @@ const TriangleShader = {
     vertex: `#version 300 es
 
 in vec4 position;
+in vec3 color;
+
+out vec3 varyingColor;
 
 void main() {
     gl_Position = position;
+    varyingColor = color;
 }
     `,
     fragment: `#version 300 es
 precision highp float;
 
+in vec3 varyingColor;
 out vec4 outColor;
 
 void main() {
-    outColor = vec4(1, 0, 0.5, 1);
+    outColor = vec4(varyingColor.xyz, 1);
 }
     `,
 }
@@ -23,22 +28,27 @@ void main() {
 export class Triangle {
     program?: WebGLProgram;
 
-    vertex = [
-        0, 0,
-        0, 0.5,
-        0.7, 0,
-    ];
+    vertex = {
+        position: [
+            0, 0,
+            0, 0.5,
+            0.7, 0,
+        ],
+        color: [
+            1,0,0,
+            0,1,0,
+            0,0,1,
+        ],
+        float32Data: [
+            0, 0, 1, 0, 0,
+            0, 0.5, 0, 1, 0,
+            0.7, 0, 0, 0, 1,
+        ]
+    }
 
     // vertex-shader in vec4 position;
     positionAttributeLocation: number | null = null;
     vao : WebGLVertexArrayObject | null = null;
-
-    positionAttributeBufferInfo = {
-        size: 2,
-        normalize: false,
-        stride: 0,
-        offset: 0,
-    }
 
     constructor(private gl: WebGL2RenderingContext | null) {
         if(!this.gl){
@@ -70,7 +80,15 @@ export class Triangle {
 
         if(this.program === undefined) return;
 
-        this.positionAttributeLocation = this.gl.getAttribLocation(this.program, 'position');
+        this.vao = this.gl.createVertexArray();
+        this.putVertexBuffer();
+    }
+
+    putVertexBuffer() {
+        if(!this.gl || !this.program) return;
+
+        const vertexPositionAttributeLocation = this.gl.getAttribLocation(this.program, 'position');
+        const vertexColorAttributeLocation = this.gl.getAttribLocation(this.program, 'color');
 
         const vertexBuffer = this.gl.createBuffer();
 
@@ -80,19 +98,37 @@ export class Triangle {
         }
 
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertex), this.gl.STATIC_DRAW);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertex.float32Data), this.gl.STATIC_DRAW);
 
-        this.vao = this.gl.createVertexArray();
         this.gl.bindVertexArray(this.vao); // <-- enableVertexAttribArray를 호출하기 위해 필요함.
-        this.gl.enableVertexAttribArray(this.positionAttributeLocation);
+
+        this.gl.enableVertexAttribArray(vertexPositionAttributeLocation);
+        this.gl.enableVertexAttribArray(vertexColorAttributeLocation);
+
+        /*
+        * [주의!!!!] vertexAttribPointer, stride, offset은 bytes 기준으로 값을 넣어줘야함.
+        */
+        // position attribute
         this.gl.vertexAttribPointer(
-            this.positionAttributeLocation, 
-            this.positionAttributeBufferInfo.size, // size
+            vertexPositionAttributeLocation, 
+            2, // size
             this.gl.FLOAT, // type
-            this.positionAttributeBufferInfo.normalize,  // normalize 여부
-            this.positionAttributeBufferInfo.stride, // stride <- size * typeof(type) 순으로 버퍼를 읽음
-            this.positionAttributeBufferInfo.offset // offset
+            false,  // normalize 여부
+            5*Float32Array.BYTES_PER_ELEMENT, // stride <- size * typeof(type) 순으로 버퍼를 읽음
+            0 // offset
             );
+
+        console.log(Float32Array.BYTES_PER_ELEMENT);
+
+        // color attribute
+        this.gl.vertexAttribPointer(
+            vertexColorAttributeLocation, 
+            3, // size
+            this.gl.FLOAT, // type
+            false,  // normalize 여부
+            5*Float32Array.BYTES_PER_ELEMENT, // stride <- size * typeof(type) 순으로 버퍼를 읽음
+            2*Float32Array.BYTES_PER_ELEMENT // offset
+        );
     }
 
     drawTriangle(){
