@@ -118,8 +118,6 @@ export class Triangle {
             0 // offset
             );
 
-        console.log(Float32Array.BYTES_PER_ELEMENT);
-
         // color attribute
         this.gl.vertexAttribPointer(
             vertexColorAttributeLocation, 
@@ -133,11 +131,8 @@ export class Triangle {
 
     drawTriangle(){
         if(!this.gl || !this.program){
-            console.log('삼각형 그리기 실패!');
             return;
         }
-
-        console.log('그려');
 
         this.gl.useProgram(this.program);
         this.gl.bindVertexArray(this.vao);
