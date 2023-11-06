@@ -25,4 +25,9 @@ export class Renderer {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
         this.triangle.drawTriangle();
     }
+
+    keepRerender(){
+        this.render();
+        requestAnimationFrame(this.keepRerender.bind(this));
+    }
 }

@@ -1,3 +1,4 @@
+import * as glm from "gl-matrix";
 import { ShaderProgram } from "../renderer/shaderProgram"
 
 const TriangleShader = {
@@ -5,11 +6,12 @@ const TriangleShader = {
 
 in vec4 position;
 in vec3 color;
+uniform mat4 rotationMatrix;
 
 out vec3 varyingColor;
 
 void main() {
-    gl_Position = position;
+    gl_Position = position * rotationMatrix;
     varyingColor = color;
 }
     `,
@@ -50,6 +52,9 @@ export class Triangle {
     positionAttributeLocation: number | null = null;
     vao : WebGLVertexArrayObject | null = null;
 
+    rotation = 0; // radian임
+    rotationMatrix = glm.mat4.create();
+
     constructor(private gl: WebGL2RenderingContext | null) {
         if(!this.gl){
             console.error('WebGL2RenderingContext가 존재하지 않습니다.');
@@ -57,6 +62,14 @@ export class Triangle {
         }
 
         this.shaderInitialize();
+        this.controller();
+    }
+
+    controller(){
+        const input = document.querySelector('input[type="range"]');
+        input?.addEventListener('input',(e: any)=>{
+            this.rotation = glm.glMatrix.toRadian(e.target.value);
+        });
     }
 
     /*
@@ -129,12 +142,23 @@ export class Triangle {
         );
     }
 
+    putUniformBuffer(){
+        if(!this.gl || !this.program) return;
+
+        const rotationMatrix = this.gl.getUniformLocation(this.program, 'rotationMatrix');
+        glm.mat4.rotateZ(this.rotationMatrix, glm.mat4.create(), this.rotation);
+
+        this.gl.uniformMatrix4fv(rotationMatrix, false, this.rotationMatrix);
+
+    }
+
     drawTriangle(){
         if(!this.gl || !this.program){
             return;
         }
 
         this.gl.useProgram(this.program);
+        this.putUniformBuffer();
         this.gl.bindVertexArray(this.vao);
         this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
     }
