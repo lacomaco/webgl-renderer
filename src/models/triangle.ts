@@ -4,7 +4,7 @@ import { ShaderProgram } from "../renderer/shaderProgram"
 const TriangleShader = {
     vertex: `#version 300 es
 
-in vec4 position;
+layout(location=0) in vec4 position;
 in vec3 color;
 uniform mat4 rotationMatrix;
 
@@ -34,17 +34,20 @@ export class Triangle {
         position: [
             0, 0,
             0, 0.5,
-            0.7, 0,
+            0.5, 0,
         ],
         color: [
             1,0,0,
             0,1,0,
             0,0,1,
         ],
+        index: [
+            0,2,1
+        ],
         float32Data: [
             0, 0, 1, 0, 0,
             0, 0.5, 0, 1, 0,
-            0.7, 0, 0, 0, 1,
+            0.5, 0, 0, 0, 1,
         ]
     }
 
@@ -103,20 +106,30 @@ export class Triangle {
         const vertexPositionAttributeLocation = this.gl.getAttribLocation(this.program, 'position');
         const vertexColorAttributeLocation = this.gl.getAttribLocation(this.program, 'color');
 
-        const vertexBuffer = this.gl.createBuffer();
-
-        if(!vertexBuffer){
-            console.error('triangle buffer 생성 실패!');
-            return;
-        }
-
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertex.float32Data), this.gl.STATIC_DRAW);
+        // 인덱스 버퍼 생성
+        // const indexBuffer = this.gl.createBuffer();
+        // this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        // this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.vertex.index), this.gl.STATIC_DRAW);
+        // 인덱서 버퍼 생성 끝
+        console.log('인덱스 버퍼!');
 
         this.gl.bindVertexArray(this.vao); // <-- enableVertexAttribArray를 호출하기 위해 필요함.
 
         this.gl.enableVertexAttribArray(vertexPositionAttributeLocation);
         this.gl.enableVertexAttribArray(vertexColorAttributeLocation);
+
+        // 버퍼 생성
+        // 버퍼는 enableVertexAttribArray 다음에 생성하는것이 좋음.
+        // 원인은 모르겠지만 indexBuffer를 enableVertexAttribArray 이전에 생성하면 정점이 그려지지 않는 이슈가 있음.
+        const indexBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.vertex.index), this.gl.STATIC_DRAW);
+
+        const vertexBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertex.float32Data), this.gl.STATIC_DRAW);
+        // 버퍼 생성
+
 
         /*
         * [주의!!!!] vertexAttribPointer, stride, offset은 bytes 기준으로 값을 넣어줘야함.
@@ -132,6 +145,7 @@ export class Triangle {
             );
 
         // color attribute
+        
         this.gl.vertexAttribPointer(
             vertexColorAttributeLocation, 
             3, // size
@@ -140,6 +154,7 @@ export class Triangle {
             5*Float32Array.BYTES_PER_ELEMENT, // stride <- size * typeof(type) 순으로 버퍼를 읽음
             2*Float32Array.BYTES_PER_ELEMENT // offset
         );
+        
     }
 
     putUniformBuffer(){
@@ -160,6 +175,7 @@ export class Triangle {
         this.gl.useProgram(this.program);
         this.putUniformBuffer();
         this.gl.bindVertexArray(this.vao);
-        this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
+        const indexType = this.gl.UNSIGNED_SHORT;
+        this.gl.drawElements(this.gl.TRIANGLES,3,indexType,0);
     }
 }
