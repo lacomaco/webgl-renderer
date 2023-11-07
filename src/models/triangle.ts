@@ -107,11 +107,11 @@ export class Triangle {
         const vertexColorAttributeLocation = this.gl.getAttribLocation(this.program, 'color');
 
         // 인덱스 버퍼 생성
+        // 교훈을 위해 남겨둠. 버퍼는 enableAttribute 이후에 생성해야함.
         // const indexBuffer = this.gl.createBuffer();
         // this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
         // this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.vertex.index), this.gl.STATIC_DRAW);
         // 인덱서 버퍼 생성 끝
-        console.log('인덱스 버퍼!');
 
         this.gl.bindVertexArray(this.vao); // <-- enableVertexAttribArray를 호출하기 위해 필요함.
 
