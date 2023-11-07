@@ -1,3 +1,4 @@
+import { TextureBox } from "../models/textureBox";
 import { Triangle } from "../models/triangle";
 
 export class Renderer {
@@ -5,10 +6,12 @@ export class Renderer {
     gl = this.canvas.getContext("webgl2");
 
     triangle: Triangle;
+    box: TextureBox;
 
     constructor() {
         this.initialize();
         this.triangle = new Triangle(this.gl);
+        this.box = new TextureBox(this.gl);
     }
 
     initialize(){
@@ -24,6 +27,7 @@ export class Renderer {
         this.gl.clearColor(0, 0, 0, 0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
         this.triangle.drawTriangle();
+        this.box.drawBox();
     }
 
     keepRerender(){
