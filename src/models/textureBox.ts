@@ -3,22 +3,26 @@ import { ShaderProgram } from "../renderer/shaderProgram";
 const TexutreBoxShader = {
     vertex: `# version 300 es
 in vec4 position;
-in vec3 color;
+in vec2 a_texcoord;
 
-out vec3 varyingColor;
+out vec2 v_texcoord;
+
 void main() {
     gl_Position = position;
-    varyingColor = color;
+    v_texcoord = a_texcoord;
 }
 `,
     fragment: `# version 300 es
 precision highp float;
 
-in vec3 varyingColor;
+in vec2 v_texcoord;
+
+uniform sampler2D u_texture;
+
 out vec4 outColor;
 
 void main() {
-    outColor = vec4(varyingColor.xyz, 1);
+    outColor = texture(u_texture, v_texcoord);
 }
 `
 }
@@ -27,38 +31,46 @@ export class TextureBox {
     vao: WebGLVertexArrayObject | null = null;
 
     vertex = {
-        position: [
-            0,0,// 중앙 <- 0
-            -1,0 // 왼쪽 중앙 <- 1
-            -1,-1, // 왼쪽 아래 <- 2
-            0,-1 // 아래 중앙 <- 3
-        ],
-        color: [
-            // 다 빨간색 나중에 uv 좌표로 변경할 예정
-            1,0,0,
-            1,0,0,
-            1,0,0,
-            1,0,0,
-        ],
         index: [
             0,1,2,
             0,2,3
         ],
         float32Data: [
-            0,0,1,0,0,
-            -1,0,1,0,0,
-            -1,-1,1,0,0,
-            0,-1,1,0,0,
+            0,0, 1,1, // 중앙
+            -1,0, 0,1, // 왼쪽 중앙
+            -1,-1, 0,0, // 왼쪽 아래
+            0,-1, 1,0, // 아래 중앙
         ],
     }
+
+    isWallLoad = false;
+    isAwesomeFaceLoad = false;
+
+    wallImage = new Image();
+    awesomeFaceImage = new Image();
 
     constructor(private gl: WebGL2RenderingContext | null) {
         if(!this.gl){
             console.error('WebGL2RenderingContext가 존재하지 않습니다.');
             return;
         }
-        
-        this.shaderInitialize(this.gl);
+
+        Promise.all([
+            this.imageLoad(this.wallImage, './src/assets/wall.jpg'),
+            this.imageLoad(this.awesomeFaceImage, './src/assets/awesomeface.png')
+        ]).then(()=>{
+            if(!this.gl) return;
+            this.shaderInitialize(this.gl);
+        })
+    }
+
+    imageLoad(image: HTMLImageElement,src:string) {
+        return new Promise((resolove)=>{
+            image.src = src;
+            image.addEventListener('load',()=>{
+                resolove(true);
+            })
+        });
     }
 
     shaderInitialize(gl:WebGL2RenderingContext) {
@@ -87,30 +99,47 @@ export class TextureBox {
         if(!this.gl || !this.program) return;
 
         const positionAttributeLocation = this.gl.getAttribLocation(this.program, 'position');
-        const colorAttributeLocation = this.gl.getAttribLocation(this.program, 'color');
+        const textureAttributeLocation = this.gl.getAttribLocation(this.program, 'a_texcoord');
 
         this.gl.enableVertexAttribArray(positionAttributeLocation);
-        this.gl.enableVertexAttribArray(colorAttributeLocation);
+        this.gl.enableVertexAttribArray(textureAttributeLocation);
 
         const vertexBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertex.float32Data), this.gl.STATIC_DRAW);
+
+        // 텍스처 바인드
+        const texture = this.gl.createTexture();
+        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+
+        this.gl.texImage2D(
+            this.gl.TEXTURE_2D,
+            0,
+            this.gl.RGBA,
+            this.gl.RGBA,
+            this.gl.UNSIGNED_BYTE,
+            this.wallImage
+        );
+        this.gl.generateMipmap(this.gl.TEXTURE_2D);
+
+        // 텍스처 바인드 끝
 
         this.gl.vertexAttribPointer(
             positionAttributeLocation, 
             2, 
             this.gl.FLOAT, 
             false, 
-            5*Float32Array.BYTES_PER_ELEMENT,
+            4*Float32Array.BYTES_PER_ELEMENT,
             0
         );
 
         this.gl.vertexAttribPointer(
-            colorAttributeLocation, 
-            3, 
+            textureAttributeLocation, 
+            2, 
             this.gl.FLOAT, 
             false, 
-            5*Float32Array.BYTES_PER_ELEMENT, 
+            4*Float32Array.BYTES_PER_ELEMENT, 
             2*Float32Array.BYTES_PER_ELEMENT
         );
     }
