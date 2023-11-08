@@ -17,12 +17,16 @@ precision highp float;
 
 in vec2 v_texcoord;
 
-uniform sampler2D u_texture;
+uniform sampler2D u_texture0;
+uniform sampler2D u_texture1;
 
 out vec4 outColor;
 
 void main() {
-    outColor = texture(u_texture, v_texcoord);
+    vec4 color0 = texture(u_texture0, v_texcoord);
+    vec4 color1 = texture(u_texture1, v_texcoord);
+
+    outColor = color0 + color1 * 0.2;
 }
 `
 }
@@ -46,8 +50,11 @@ export class TextureBox {
     isWallLoad = false;
     isAwesomeFaceLoad = false;
 
-    wallImage = new Image();
-    awesomeFaceImage = new Image();
+    images = [
+        new Image(),
+        new Image(),
+    ];
+
 
     constructor(private gl: WebGL2RenderingContext | null) {
         if(!this.gl){
@@ -56,18 +63,18 @@ export class TextureBox {
         }
 
         Promise.all([
-            this.imageLoad(this.wallImage, './src/assets/wall.jpg'),
-            this.imageLoad(this.awesomeFaceImage, './src/assets/awesomeface.png')
+            this.imageLoad(0, './src/assets/wall.jpg'),
+            this.imageLoad(1, './src/assets/awesomeface.png')
         ]).then(()=>{
             if(!this.gl) return;
             this.shaderInitialize(this.gl);
         })
     }
 
-    imageLoad(image: HTMLImageElement,src:string) {
+    imageLoad(index:number,src:string) {
         return new Promise((resolove)=>{
-            image.src = src;
-            image.addEventListener('load',()=>{
+            this.images[index].src = src;
+            this.images[index].addEventListener('load',()=>{
                 resolove(true);
             })
         });
@@ -108,23 +115,6 @@ export class TextureBox {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertex.float32Data), this.gl.STATIC_DRAW);
 
-        // 텍스처 바인드
-        const texture = this.gl.createTexture();
-        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
-        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
-
-        this.gl.texImage2D(
-            this.gl.TEXTURE_2D,
-            0,
-            this.gl.RGBA,
-            this.gl.RGBA,
-            this.gl.UNSIGNED_BYTE,
-            this.wallImage
-        );
-        this.gl.generateMipmap(this.gl.TEXTURE_2D);
-
-        // 텍스처 바인드 끝
-
         this.gl.vertexAttribPointer(
             positionAttributeLocation, 
             2, 
@@ -144,6 +134,47 @@ export class TextureBox {
         );
     }
 
+    createTexture(){
+        if(!this.gl || !this.program) return;
+
+        const textures = [];
+        for(let i = 0 ; i < 2 ; i++){
+            const texture = this.gl.createTexture();
+            this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+            this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+
+            // 밉맵을 사용하지 않는 파라메터를 설정합니다.
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+
+    
+            this.gl.texImage2D(
+                this.gl.TEXTURE_2D,
+                0,
+                this.gl.RGBA,
+                this.gl.RGBA,
+                this.gl.UNSIGNED_BYTE,
+                this.images[i]
+            );
+            // this.gl.generateMipmap(this.gl.TEXTURE_2D);
+            textures.push(texture);
+        }
+
+        const u_image0Location = this.gl.getUniformLocation(this.program, 'u_texture0');
+        const u_image1Location = this.gl.getUniformLocation(this.program, 'u_texture1');
+
+        this.gl.uniform1i(u_image0Location, 0);
+        this.gl.uniform1i(u_image1Location, 1);
+
+        this.gl.activeTexture(this.gl.TEXTURE0);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, textures[0]);
+
+        this.gl.activeTexture(this.gl.TEXTURE1);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, textures[1]);
+    }
+
     createIndexBuffer(){
         if(!this.gl) return;
 
@@ -158,6 +189,8 @@ export class TextureBox {
         const indexType = this.gl.UNSIGNED_SHORT;
 
         this.gl.useProgram(this.program);
+        // texutre를 uniform으로 넘겨주기 때문에 draw시 호출하도록 수정
+        this.createTexture();
         this.gl.bindVertexArray(this.vao);
         this.gl.drawElements(this.gl.TRIANGLES, this.vertex.index.length, indexType, 0);
     }
