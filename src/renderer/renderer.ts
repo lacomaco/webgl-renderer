@@ -20,15 +20,29 @@ export class Renderer {
         if(this.gl){
             this.circles.push(new Circle2D(
                 this.gl,
-                [0,0,0.1],
+                [-0.1,0.1,0.1],
                 [1,0,0],
                 0.3
-            ));
+            ),
+            new Circle2D(
+                this.gl,
+                [0.1,-0.1,0.2],
+                [0,1,0],
+                0.3
+            ),
+            new Circle2D(
+                this.gl,
+                [0.3,0.1,0.3],
+                [0,0,1],
+                0.3
+            ),
+            );
         }
     }
 
     render(){
         if(!this.gl) return;
+        this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.clearColor(0, 0, 0, 0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
         this.circles.forEach((circle)=>{
