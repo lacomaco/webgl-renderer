@@ -43,6 +43,7 @@ export class Renderer {
     render(){
         if(!this.gl) return;
         this.gl.enable(this.gl.DEPTH_TEST);
+        this.gl.clearDepth(1.0);
         this.gl.clearColor(0, 0, 0, 0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
         this.circles.forEach((circle)=>{
