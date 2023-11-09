@@ -5,10 +5,17 @@ const TexutreBoxShader = {
 in vec4 position;
 in vec2 a_texcoord;
 
+uniform float u_aspectRatio;
+uniform vec3 u_scale;
+
 out vec2 v_texcoord;
 
 void main() {
     gl_Position = position;
+    gl_Position.y *= u_aspectRatio;
+
+    gl_Position *= vec4(u_scale.xyz, 1.0);
+
     v_texcoord = a_texcoord;
 }
 `,
@@ -39,6 +46,10 @@ export class TextureBox {
             0,1,2,
             0,2,3
         ],
+        backIndex:[
+            0,2,1,
+            0,3,2
+        ],
         float32Data: [
             0,0, 1,1, // 중앙
             -1,0, 0,1, // 왼쪽 중앙
@@ -49,6 +60,7 @@ export class TextureBox {
 
     isWallLoad = false;
     isAwesomeFaceLoad = false;
+    scale = [0.5,0.5,1.0];
 
     images = [
         new Image(),
@@ -56,7 +68,10 @@ export class TextureBox {
     ];
 
 
-    constructor(private gl: WebGL2RenderingContext | null) {
+    constructor(
+        private gl: WebGL2RenderingContext | null,
+        private backPosition=false,
+        ) {
         if(!this.gl){
             console.error('WebGL2RenderingContext가 존재하지 않습니다.');
             return;
@@ -99,7 +114,11 @@ export class TextureBox {
 
         
         this.createVertexBuffer();
-        this.createIndexBuffer();
+        if(this.backPosition){
+            this.createBackIndexBuffer();
+        }else{
+            this.createIndexBuffer();
+        }
     }
     
     createVertexBuffer(){
@@ -183,7 +202,25 @@ export class TextureBox {
         this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.vertex.index), this.gl.STATIC_DRAW);
     }
 
-    drawBox(){
+    createBackIndexBuffer(){
+        if(!this.gl) return;
+
+        const indexBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.vertex.backIndex), this.gl.STATIC_DRAW);
+    }
+
+    createUniformBuffer() {
+        if(!this.gl || !this.program) return;
+
+        const aspectRatio = this.gl.getUniformLocation(this.program, 'u_aspectRatio');
+        const scale = this.gl.getUniformLocation(this.program, 'u_scale');
+
+        this.gl.uniform1f(aspectRatio, this.gl.canvas.width / this.gl.canvas.height);
+        this.gl.uniform3fv(scale, this.scale);
+    }
+
+    render(){
         if(!this.gl || !this.program || !this.vao) return;
 
         const indexType = this.gl.UNSIGNED_SHORT;
@@ -191,6 +228,7 @@ export class TextureBox {
         this.gl.useProgram(this.program);
         // texutre를 uniform으로 넘겨주기 때문에 draw시 호출하도록 수정
         this.createTexture();
+        this.createUniformBuffer();
         this.gl.bindVertexArray(this.vao);
         this.gl.drawElements(this.gl.TRIANGLES, this.vertex.index.length, indexType, 0);
     }

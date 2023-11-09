@@ -1,10 +1,12 @@
 import { Circle2D } from "../models/circle2D";
+import { TextureBox } from "../models/textureBox";
 
 export class Renderer {
     canvas = document.createElement('canvas');
     gl = this.canvas.getContext("webgl2");
 
     circles: Circle2D[] = [];
+    textureBox = new TextureBox(this.gl);
 
     constructor() {
         this.initialize();
@@ -46,9 +48,8 @@ export class Renderer {
         this.gl.clearDepth(1.0);
         this.gl.clearColor(0, 0, 0, 0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-        this.circles.forEach((circle)=>{
-            circle.draw();
-        })
+        this.textureBox.render();
+
     }
 
     keepRerender(){
