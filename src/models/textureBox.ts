@@ -1,4 +1,5 @@
 import { ShaderProgram } from "../renderer/shaderProgram";
+import * as glm from 'gl-matrix'
 
 const TexutreBoxShader = {
     vertex: `# version 300 es
@@ -7,14 +8,18 @@ in vec2 a_texcoord;
 
 uniform float u_aspectRatio;
 uniform vec3 u_scale;
+uniform mat4 moveMatrix;
 
 out vec2 v_texcoord;
 
 void main() {
     gl_Position = position;
-    gl_Position.y *= u_aspectRatio;
+    // wgsl <- column major matrix여서 vector 먼저 곱해야함.
+    gl_Position = moveMatrix * gl_Position;
+    
+    gl_Position.y = gl_Position.y * u_aspectRatio;
 
-    gl_Position *= vec4(u_scale.xyz, 1.0);
+    //gl_Position = vec4(u_scale.xyz, 1.0) * gl_Position;
 
     v_texcoord = a_texcoord;
 }
@@ -51,16 +56,18 @@ export class TextureBox {
             0,3,2
         ],
         float32Data: [
-            0,0, 1,1, // 중앙
-            -1,0, 0,1, // 왼쪽 중앙
+            1,1, 1,1, // 중앙
+            -1,1, 0,1, // 왼쪽 중앙
             -1,-1, 0,0, // 왼쪽 아래
-            0,-1, 1,0, // 아래 중앙
+            1,-1, 1,0, // 아래 중앙
         ],
     }
 
     isWallLoad = false;
     isAwesomeFaceLoad = false;
-    scale = [0.5,0.5,1.0];
+    scale = [0.3,0.3,1.0];
+
+    modelMatrix = glm.mat4.create();
 
     images = [
         new Image(),
@@ -218,6 +225,9 @@ export class TextureBox {
 
         this.gl.uniform1f(aspectRatio, this.gl.canvas.width / this.gl.canvas.height);
         this.gl.uniform3fv(scale, this.scale);
+
+        const moveMatrix = this.gl.getUniformLocation(this.program, 'moveMatrix');
+        this.gl.uniformMatrix4fv(moveMatrix, false, this.modelMatrix);
     }
 
     render(){
