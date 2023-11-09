@@ -26,7 +26,7 @@ export class Renderer {
             ),
             new Circle2D(
                 this.gl,
-                [0.1,-0.1,0.2],
+                [0,0,0.08],
                 [0,1,0],
                 0.3
             ),

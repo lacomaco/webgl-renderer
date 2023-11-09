@@ -6,9 +6,11 @@ const Circle2DShader = {
 in vec4 a_position;
     
 uniform vec3 u_color;
+uniform float u_aspectRatio;
 
 void main() {
     gl_Position = a_position;
+    gl_Position.y *= u_aspectRatio;
 }
 `,
     fragment: `# version 300 es
@@ -122,6 +124,10 @@ export class Circle2D {
 
         const colorUniformLocation = this.gl.getUniformLocation(this.program, 'u_color');
         this.gl.uniform3fv(colorUniformLocation, this.colors);
+
+        const aspectRatio = this.gl.canvas.width / this.gl.canvas.height;
+        const aspectRatioUniformLocation = this.gl.getUniformLocation(this.program, 'u_aspectRatio');
+        this.gl.uniform1f(aspectRatioUniformLocation, aspectRatio);
     }
 
     draw() {
