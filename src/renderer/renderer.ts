@@ -17,9 +17,10 @@ export class Renderer {
         {
 
             const move = glm.mat4.create();
-            glm.mat4.translate(move, move, [-0.5,0,0]);
+            
             glm.mat4.scale(move, move, [0.3,0.3,0.3]);
-            glm.mat4.rotateY(move, move, Math.PI/4);
+            glm.mat4.rotateX(move, move, 30 * Math.PI/180);
+            //glm.mat4.translate(move, move, [-0.5,0,0]);
             this.textureBox.modelMatrix = move;
         }
 
@@ -66,10 +67,11 @@ export class Renderer {
     render(){
         if(!this.gl) return;
         this.gl.enable(this.gl.DEPTH_TEST);
+        this.gl.depthFunc(this.gl.LEQUAL);
         this.gl.enable(this.gl.CULL_FACE);
         this.gl.clearDepth(1.0);
         this.gl.clearColor(0, 0, 0, 0);
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         this.textureBox.render();
         this.textureBox2.render();
 

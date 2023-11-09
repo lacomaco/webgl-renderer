@@ -7,19 +7,17 @@ in vec4 position;
 in vec2 a_texcoord;
 
 uniform float u_aspectRatio;
-uniform vec3 u_scale;
 uniform mat4 moveMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
 
 out vec2 v_texcoord;
 
 void main() {
     gl_Position = position;
-    // wgsl <- column major matrix여서 vector 먼저 곱해야함.
-    gl_Position = moveMatrix * gl_Position;
-    
-    gl_Position.y = gl_Position.y * u_aspectRatio;
+    // glsl <- column major matrix여서 vector 먼저 곱해야함.
+    gl_Position = projectionMatrix * viewMatrix * moveMatrix * gl_Position;
 
-    //gl_Position = vec4(u_scale.xyz, 1.0) * gl_Position;
 
     v_texcoord = a_texcoord;
 }
@@ -56,16 +54,15 @@ export class TextureBox {
             0,3,2
         ],
         float32Data: [
-            1,1, 1,1, // 중앙
-            -1,1, 0,1, // 왼쪽 중앙
-            -1,-1, 0,0, // 왼쪽 아래
-            1,-1, 1,0, // 아래 중앙
+            1,1,-1, 1,1, // 중앙
+            -1,1,-1, 0,1, // 왼쪽 중앙
+            -1,-1,-1, 0,0, // 왼쪽 아래
+            1,-1,-1, 1,0, // 아래 중앙
         ],
     }
 
     isWallLoad = false;
     isAwesomeFaceLoad = false;
-    scale = [0.3,0.3,1.0];
 
     modelMatrix = glm.mat4.create();
 
@@ -73,6 +70,30 @@ export class TextureBox {
         new Image(),
         new Image(),
     ];
+
+    cameraPosition = [0,0,1];
+    lookAtPoint = [0,0,0];
+    upDirection = [0,1,0];
+
+    viewMatrix = glm.mat4.lookAt(
+        glm.mat4.create(),
+        new Float32Array(this.cameraPosition),
+        new Float32Array(this.lookAtPoint),
+        new Float32Array(this.upDirection)
+    );
+
+    view = {
+        projectionMatrix: glm.mat4.perspective(
+            glm.mat4.create(),
+            55 * Math.PI / 180, // fov
+            this.gl ? this.gl.canvas.width / this.gl.canvas.height : 1, // aspect
+            0.1, // near clipping
+            100.0, // far clipping
+        )
+    }
+
+    currentDegree = 1;
+    increase = 0.001;
 
 
     constructor(
@@ -83,6 +104,9 @@ export class TextureBox {
             console.error('WebGL2RenderingContext가 존재하지 않습니다.');
             return;
         }
+
+        console.log(this.gl.canvas.width / this.gl.canvas.height);
+        console.log(window.innerWidth/window.innerHeight);
 
         Promise.all([
             this.imageLoad(0, './src/assets/wall.jpg'),
@@ -143,10 +167,10 @@ export class TextureBox {
 
         this.gl.vertexAttribPointer(
             positionAttributeLocation, 
-            2, 
+            3, 
             this.gl.FLOAT, 
             false, 
-            4*Float32Array.BYTES_PER_ELEMENT,
+            5*Float32Array.BYTES_PER_ELEMENT,
             0
         );
 
@@ -155,8 +179,8 @@ export class TextureBox {
             2, 
             this.gl.FLOAT, 
             false, 
-            4*Float32Array.BYTES_PER_ELEMENT, 
-            2*Float32Array.BYTES_PER_ELEMENT
+            5*Float32Array.BYTES_PER_ELEMENT, 
+            3*Float32Array.BYTES_PER_ELEMENT
         );
     }
 
@@ -221,13 +245,17 @@ export class TextureBox {
         if(!this.gl || !this.program) return;
 
         const aspectRatio = this.gl.getUniformLocation(this.program, 'u_aspectRatio');
-        const scale = this.gl.getUniformLocation(this.program, 'u_scale');
 
         this.gl.uniform1f(aspectRatio, this.gl.canvas.width / this.gl.canvas.height);
-        this.gl.uniform3fv(scale, this.scale);
 
         const moveMatrix = this.gl.getUniformLocation(this.program, 'moveMatrix');
         this.gl.uniformMatrix4fv(moveMatrix, false, this.modelMatrix);
+
+        const projectionMatrix = this.gl.getUniformLocation(this.program, 'projectionMatrix');
+        this.gl.uniformMatrix4fv(projectionMatrix, false, this.view.projectionMatrix);
+
+        const viewMatrix = this.gl.getUniformLocation(this.program, 'viewMatrix');
+        this.gl.uniformMatrix4fv(viewMatrix, false, this.viewMatrix);
     }
 
     render(){
