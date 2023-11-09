@@ -6,7 +6,7 @@ export class Renderer {
     gl = this.canvas.getContext("webgl2");
 
     circles: Circle2D[] = [];
-    textureBox = new TextureBox(this.gl);
+    textureBox = new TextureBox(this.gl,true);
 
     constructor() {
         this.initialize();
@@ -45,6 +45,7 @@ export class Renderer {
     render(){
         if(!this.gl) return;
         this.gl.enable(this.gl.DEPTH_TEST);
+        this.gl.enable(this.gl.CULL_FACE);
         this.gl.clearDepth(1.0);
         this.gl.clearColor(0, 0, 0, 0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
