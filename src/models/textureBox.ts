@@ -7,17 +7,14 @@ in vec4 position;
 in vec2 a_texcoord;
 
 uniform float u_aspectRatio;
-uniform mat4 moveMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
 out vec2 v_texcoord;
 
 void main() {
-    gl_Position = position;
-    // glsl <- column major matrix여서 vector 먼저 곱해야함.
-    gl_Position = projectionMatrix * viewMatrix * moveMatrix * gl_Position;
-
+    gl_Position = projection * view * model * position;
 
     v_texcoord = a_texcoord;
 }
@@ -36,6 +33,7 @@ void main() {
     vec4 color0 = texture(u_texture0, v_texcoord);
     vec4 color1 = texture(u_texture1, v_texcoord);
 
+
     outColor = color0 + color1 * 0.2;
 }
 `
@@ -45,19 +43,55 @@ export class TextureBox {
     vao: WebGLVertexArrayObject | null = null;
 
     vertex = {
-        index: [
-            0,1,2,
-            0,2,3
+        vertex: [
+            -1,1,1, //v0
+            -1,1,-1, //v1
+            1,1,-1, //v2
+            1,1,1, //v3
+            -1,-1,1, //v4
+            1,-1,1, //v5
+            1,-1,-1, //v6
+            -1,-1,-1, //v7
         ],
-        backIndex:[
-            0,2,1,
-            0,3,2
+        index: [
+            // 앞면
+            3,0,4,
+            3,4,5,
+            // 아랫면
+            6,5,4,
+            6,4,7,
+            // 윗면
+            1,0,2,
+            2,0,3,
+            // 뒷면
+            2,7,1,
+            2,6,7,
+            // 오른쪽면
+            2,3,5,
+            2,5,6,
+            // 왼쪽면
+            1,4,0,
+            1,7,4,
+        ],
+        uv: [
+            0,1, // v0
+            1,1, // v1
+            0,1, // v2
+            1,1, // v3
+            0,0, // v4
+            1,0, // v5
+            0,0, // v6
+            1,0, // v7
         ],
         float32Data: [
-            1,1,-1, 1,1, // 중앙
-            -1,1,-1, 0,1, // 왼쪽 중앙
-            -1,-1,-1, 0,0, // 왼쪽 아래
-            1,-1,-1, 1,0, // 아래 중앙
+            -1,1,1,0,1, //v0
+            -1,1,-1,1,1, //v1
+            1,1,-1,1,1, //v2
+            1,1,1,1,1, //v3
+            -1,-1,1,0,0, //v4
+            1,-1,1,1,0, //v5
+            1,-1,-1,1,1, //v6
+            -1,-1,-1,1,0, //v7
         ],
     }
 
@@ -71,7 +105,7 @@ export class TextureBox {
         new Image(),
     ];
 
-    cameraPosition = [0,0,1];
+    cameraPosition = [0,0,5];
     lookAtPoint = [0,0,0];
     upDirection = [0,1,0];
 
@@ -92,21 +126,18 @@ export class TextureBox {
         )
     }
 
-    currentDegree = 1;
-    increase = 0.001;
+    xDegree = 0;
+    yDegree = 0;
+    increase = 1;
 
 
     constructor(
         private gl: WebGL2RenderingContext | null,
-        private backPosition=false,
         ) {
         if(!this.gl){
             console.error('WebGL2RenderingContext가 존재하지 않습니다.');
             return;
         }
-
-        console.log(this.gl.canvas.width / this.gl.canvas.height);
-        console.log(window.innerWidth/window.innerHeight);
 
         Promise.all([
             this.imageLoad(0, './src/assets/wall.jpg'),
@@ -145,11 +176,7 @@ export class TextureBox {
 
         
         this.createVertexBuffer();
-        if(this.backPosition){
-            this.createBackIndexBuffer();
-        }else{
-            this.createIndexBuffer();
-        }
+        this.createIndexBuffer();
     }
     
     createVertexBuffer(){
@@ -233,14 +260,6 @@ export class TextureBox {
         this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.vertex.index), this.gl.STATIC_DRAW);
     }
 
-    createBackIndexBuffer(){
-        if(!this.gl) return;
-
-        const indexBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.vertex.backIndex), this.gl.STATIC_DRAW);
-    }
-
     createUniformBuffer() {
         if(!this.gl || !this.program) return;
 
@@ -248,13 +267,26 @@ export class TextureBox {
 
         this.gl.uniform1f(aspectRatio, this.gl.canvas.width / this.gl.canvas.height);
 
-        const moveMatrix = this.gl.getUniformLocation(this.program, 'moveMatrix');
+        const moveMatrix = this.gl.getUniformLocation(this.program, 'model');
         this.gl.uniformMatrix4fv(moveMatrix, false, this.modelMatrix);
 
-        const projectionMatrix = this.gl.getUniformLocation(this.program, 'projectionMatrix');
+        // 모델 매트릭스 업데이트
+        {
+            this.xDegree += this.increase;
+            this.yDegree += this.increase;
+
+            const move = glm.mat4.create();
+
+            glm.mat4.scale(move,move,[0.5,0.5,0.5]);
+            glm.mat4.rotateX(move,move,this.xDegree * Math.PI / 180);
+            glm.mat4.rotateY(move,move,this.yDegree * Math.PI / 180);
+            this.modelMatrix = move;
+        }
+
+        const projectionMatrix = this.gl.getUniformLocation(this.program, 'projection');
         this.gl.uniformMatrix4fv(projectionMatrix, false, this.view.projectionMatrix);
 
-        const viewMatrix = this.gl.getUniformLocation(this.program, 'viewMatrix');
+        const viewMatrix = this.gl.getUniformLocation(this.program, 'view');
         this.gl.uniformMatrix4fv(viewMatrix, false, this.viewMatrix);
     }
 

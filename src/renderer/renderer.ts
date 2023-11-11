@@ -8,29 +8,17 @@ export class Renderer {
 
     circles: Circle2D[] = [];
     textureBox = new TextureBox(this.gl);
-    textureBox2 = new TextureBox(this.gl);
 
     constructor() {
         this.initialize();
 
-        // 첫번쨰 텍스쳐 박스 설정
         {
-
             const move = glm.mat4.create();
-            
-            glm.mat4.scale(move, move, [0.3,0.3,0.3]);
-            glm.mat4.rotateX(move, move, 30 * Math.PI/180);
-            //glm.mat4.translate(move, move, [-0.5,0,0]);
+
+            glm.mat4.scale(move,move,[0.5,0.5,0.5]);
+            glm.mat4.rotateX(move,move,15*Math.PI / 180);
+            glm.mat4.rotateY(move,move,110*Math.PI / 180);
             this.textureBox.modelMatrix = move;
-        }
-
-
-        // 첫번쨰 텍스쳐 박스 설정
-        {
-            const move = glm.mat4.create();
-            glm.mat4.translate(move, move, [0.5,0,0]);
-            glm.mat4.scale(move, move, [0.3,0.3,0.3]);
-            this.textureBox2.modelMatrix = move;
         }
     }
 
@@ -66,14 +54,13 @@ export class Renderer {
 
     render(){
         if(!this.gl) return;
+        this.gl.enable(this.gl.CULL_FACE);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
-        this.gl.enable(this.gl.CULL_FACE);
         this.gl.clearDepth(1.0);
         this.gl.clearColor(0, 0, 0, 0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         this.textureBox.render();
-        this.textureBox2.render();
 
     }
 
