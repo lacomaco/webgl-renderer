@@ -1,6 +1,8 @@
 import * as glm from 'gl-matrix';
 import { Circle2D } from "../models/circle2D";
 import { TextureBox } from "../models/textureBox";
+import { ModelObject } from '../models/modelObject';
+
 
 export class Renderer {
     canvas = document.createElement('canvas');
@@ -20,6 +22,8 @@ export class Renderer {
             glm.mat4.rotateY(move,move,110*Math.PI / 180);
             this.textureBox.modelMatrix = move;
         }
+
+        const test = new ModelObject();
     }
 
     initialize(){
@@ -28,28 +32,6 @@ export class Renderer {
         this.canvas.height = window.innerHeight;
         
         this.gl?.viewport(0,0,this.canvas.width, this.canvas.height);
-
-        if(this.gl){
-            this.circles.push(new Circle2D(
-                this.gl,
-                [-0.1,0.1,0.1],
-                [1,0,0],
-                0.3
-            ),
-            new Circle2D(
-                this.gl,
-                [0,0,0.08],
-                [0,1,0],
-                0.3
-            ),
-            new Circle2D(
-                this.gl,
-                [0.3,0.1,0.3],
-                [0,0,1],
-                0.3
-            ),
-            );
-        }
     }
 
     render(){

@@ -52,7 +52,6 @@ export class Circle2D {
         const twoPI = Math.PI * 2;
         const deltaTheta = twoPI / this.triangleCount;
 
-        console.log(this.center);
         this.vertices.push(this.center[0]);
         this.vertices.push(this.center[1]);
         this.vertices.push(this.center[2]);
