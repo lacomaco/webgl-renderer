@@ -1,3 +1,4 @@
+// @see https://webgl2fundamentals.org/webgl/lessons/ko/
 type Vertex = [number, number, number];
 type Texcoord = [number, number];
 type Normal = [number, number, number];

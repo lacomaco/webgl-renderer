@@ -82,6 +82,7 @@ export class Model {
     }
 
     createVertexBuffer() {}
+    
     // not yet
     createTextureBuffer() {}
 
