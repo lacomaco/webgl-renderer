@@ -1,5 +1,5 @@
 import * as glm from "gl-matrix";
-import { ShaderProgram } from "../renderer/shaderProgram"
+import { ShaderProgram } from "../../renderer/shaderProgram"
 
 const TriangleShader = {
     vertex: `#version 300 es
