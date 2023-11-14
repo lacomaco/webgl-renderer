@@ -105,7 +105,6 @@ vec3 directLight(
 out vec4 outColor;
 
 void main(){
-    /*
     vec3 toEye = normalize(cameraPosition - v_pos.xyz);
     vec3 color = directLight(u_lightStrength, 
         u_lightDirection, 
@@ -117,9 +116,8 @@ void main(){
         v_normal, 
         toEye
     );
-    */
 
-    outColor = vec4(1.0,0.0,0.0, 1.0);
+    outColor = vec4(color.xyz, 1.0);
 }  
 `,
 }

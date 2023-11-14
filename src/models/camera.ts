@@ -20,6 +20,11 @@ class _Camera {
         100
     );
 
+    setCameraPositionUniform(gl: WebGL2RenderingContext, program: WebGLProgram){
+        const cameraPositionLocation = gl.getUniformLocation(program, "cameraPosition");
+        gl.uniform3fv(cameraPositionLocation, this.cameraPosition);
+    }
+
     setViewUniform(gl: WebGL2RenderingContext, program: WebGLProgram){
         const viewMatrixLocation = gl.getUniformLocation(program, "u_view");
         gl.uniformMatrix4fv(viewMatrixLocation, false, this.viewMatrix);

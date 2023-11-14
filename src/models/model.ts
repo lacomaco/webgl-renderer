@@ -3,12 +3,13 @@ import { ShaderProgram } from "../renderer/shaderProgram";
 import * as glm from 'gl-matrix'
 import {shader} from '../shader/modelShader';
 import {camera} from '../models/camera';
+import { directLight } from "./directLight";
 
 const defaultMaterial = {
     ambient: [0.2, 0.2, 0.2],
     diffuse: [0.8, 0.8, 0.8],
     specular: [0.2,0.2,0.2],
-    shininess: 5,
+    shininess: 1,
 }
 
 export class Model {
@@ -219,13 +220,19 @@ export class Model {
         }
 
         if(material.shininess){
-            this.gl.uniform1f(this.uniformBuffer.specular, material.shininess);
+            this.gl.uniform1f(this.uniformBuffer.shininess, material.shininess);
         }
     }
 
     setWorldUniformBuffer() {
         const worldMatrixLocation = this.gl?.getUniformLocation(this.program!, 'u_world');
         this.gl?.uniformMatrix4fv(worldMatrixLocation!, false, this.worldMatrix);
+
+        const worldInvTransposeMatrixLocation = this.gl?.getUniformLocation(this.program!, 'u_worldInvTranspose');
+        const worldInvTransposeMatrix = glm.mat4.create();
+        glm.mat4.invert(worldInvTransposeMatrix, this.worldMatrix);
+        glm.mat4.transpose(worldInvTransposeMatrix, worldInvTransposeMatrix);
+        this.gl?.uniformMatrix4fv(worldInvTransposeMatrixLocation!, false, worldInvTransposeMatrix);
     }
 
     createTexture() {
@@ -240,8 +247,10 @@ export class Model {
         this.gl.useProgram(this.program);
         this.createUniformBuffer();
         this.setWorldUniformBuffer();
+        camera.setCameraPositionUniform(this.gl, this.program);
         camera.setViewUniform(this.gl, this.program);
         camera.setProjectionUniform(this.gl, this.program);
+        directLight.setLightInfo(this.gl, this.program);
 
         this.gl.bindVertexArray(this.vao);
 
