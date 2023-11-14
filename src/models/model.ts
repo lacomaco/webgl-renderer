@@ -50,6 +50,13 @@ export class Model {
 
     worldMatrix = glm.mat4.create();
 
+    worldData = {
+        currentXRotate: 0,
+        xIncrease: 0.1,
+        currentYRotate: 0,
+        yIncrease: 0.1,
+    }
+
     private program?: WebGLProgram;
 
     constructor(private url: string,private gl: WebGL2RenderingContext | null){
@@ -93,6 +100,17 @@ export class Model {
         this.createVertexBuffer();
 
         this.isModelLoaded = true;
+    }
+
+    worldMove() {
+        const move = glm.mat4.create();
+        glm.mat4.rotateX(move,move, this.worldData.currentXRotate * Math.PI / 180);
+        glm.mat4.rotateY(move, move, this.worldData.currentYRotate * Math.PI / 180);
+
+        this.worldMatrix = move;
+
+        this.worldData.currentXRotate += this.worldData.xIncrease;
+        this.worldData.currentYRotate += this.worldData.yIncrease;
     }
 
     createVertexBuffer() {
@@ -216,6 +234,8 @@ export class Model {
 
     render(){
         if(!this.gl || !this.program || !this.vao) return;
+
+        this.worldMove();
 
         this.gl.useProgram(this.program);
         this.createUniformBuffer();
