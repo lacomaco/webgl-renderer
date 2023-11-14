@@ -20,9 +20,9 @@ uniform vec3 u_lightPosition;
 // Light 구조 끝
 
 // Material 구조
-uniform vec u_materialAmbient;
-uniform vec u_materialDiffuse;
-uniform vec u_materialSpecular;
+uniform vec3 u_materialAmbient;
+uniform vec3 u_materialDiffuse;
+uniform vec3 u_materialSpecular;
 uniform float u_materialShininess;
 // Material 구조 끝
 `;
@@ -35,8 +35,7 @@ in vec4 a_normal;
 uniform mat4 u_world;
 uniform mat4 u_view;
 uniform mat4 u_projection;
-// normal 백터는 회전 변환시 위치가 틀어줄 수 있기 때문에
-// world 행렬의 역행렬의 전치행렬을 곱하여 회전시킨다.
+
 uniform mat4 u_worldInvTranspose;
 
 ${commonShader}
@@ -48,29 +47,48 @@ void main(){
     gl_Position = u_projection * u_view * u_world * a_position;
     v_normal = normalize((u_worldInvTranspose * a_normal).xyz);
     v_pos = gl_Position;
+}
 `,
     fs: `# version 300 es
+precision highp float;
+
 ${commonShader}
 
 uniform vec3 cameraPosition;
 in vec3 v_normal;
 in vec4 v_pos;
 
-float directLight(
+vec3 blinnPhong(
+    vec3 lightStrength,
+    vec3 positionToLightDirection, 
+    vec3 normal,
+    vec3 positionToEye,
+    vec3 ambient, 
+    vec3 diffuse,
+    vec3 specular,
+    float shininess){
+    vec3 hVector = normalize(positionToEye + positionToLightDirection);
+    float htodn = max(0.0, dot(normal, hVector));
+    vec3 calcSpecular = specular * pow(htodn,shininess) * lightStrength;
+
+    return ambient + diffuse * lightStrength + calcSpecular;
+}
+
+vec3 directLight(
     vec3 lightStrength,
     vec3 lightDirection,
     vec3 lightPosition,
-    float ambient,
-    float diffuse,
-    float specular,
+    vec3 ambient,
+    vec3 diffuse,
+    vec3 specular,
     float shininess,
     vec3 normal,
-    vec3 positionToEye,
+    vec3 positionToEye
 ) {
     vec3 positionToLightDirection = -lightDirection;
 
     float ndotl = max(0.0, dot(normal, positionToLightDirection));
-    float3 calculatedLightStrength = lightStrength * ndotl;
+    vec3 calculatedLightStrength = lightStrength * ndotl;
 
     return blinnPhong(
         calculatedLightStrength,
@@ -84,24 +102,7 @@ float directLight(
     );
 }
 
-float blinnPhong(
-    vec3 lightStrength,
-    vec3 positionTolightDirection, 
-    vec3 normal,
-    vec3 positionToEye,
-    float ambient, 
-    float diffuse,
-    float specular,
-    float shininess){
-3
-    vec3 half = normalize(toEye + positionToLightDirection);
-    float htodn = max(0.0, dot(normal, half));
-    float3 specular = specular * pow(htodn,shininess) * lightStrength;
-
-    return ambient + diffuse * lightStrength + specular;
-}
-
-out ve4 outColor;
+out vec4 outColor;
 
 void main(){
     vec3 toEye = normalize(cameraPosition - v_pos.xyz);
@@ -117,7 +118,6 @@ void main(){
     );
 
     outColor = vec4(color, 1.0);
-}
-    
+}  
 `,
 }

@@ -52,7 +52,7 @@ export class Model {
 
         obj.geometries.forEach((geometry)=>{
             if(!this.parts[geometry.material]){
-                const materialInfo = mtl[geometry.material] || defaultMaterial;
+                const materialInfo = (mtl && mtl[geometry.material]) || defaultMaterial;
 
                 this.parts[geometry.material] = {
                     obj: [],
