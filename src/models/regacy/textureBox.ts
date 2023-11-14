@@ -1,4 +1,4 @@
-import { ShaderProgram } from "../renderer/shaderProgram";
+import { ShaderProgram } from "../../renderer/shaderProgram";
 import * as glm from 'gl-matrix'
 
 const TexutreBoxShader = {
