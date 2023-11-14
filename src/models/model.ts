@@ -55,7 +55,7 @@ export class Model {
         currentXRotate: 0,
         xIncrease: 0.1,
         currentYRotate: 0,
-        yIncrease: 0.1,
+        yIncrease: 0.2,
     }
 
     private program?: WebGLProgram;
@@ -68,6 +68,8 @@ export class Model {
     async init() {
         if(!this.gl) return;
         const {obj,mtl} = await loadOBJ(this.url);
+
+        console.log(mtl);
 
         obj.geometries.forEach((geometry)=>{
             if(!this.parts[geometry.material]){
@@ -105,7 +107,9 @@ export class Model {
 
     worldMove() {
         const move = glm.mat4.create();
-        glm.mat4.rotateX(move,move, this.worldData.currentXRotate * Math.PI / 180);
+        glm.mat4.scale(move,move,[0.3,0.3,0.3]);
+        glm.mat4.translate(move,move,[0,-2.3,0])
+        // glm.mat4.rotateX(move,move, this.worldData.currentXRotate * Math.PI / 180);
         glm.mat4.rotateY(move, move, this.worldData.currentYRotate * Math.PI / 180);
 
         this.worldMatrix = move;

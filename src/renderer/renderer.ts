@@ -6,7 +6,7 @@ export class Renderer {
     canvas = document.createElement('canvas');
     gl = this.canvas.getContext("webgl2");
 
-    boxModel = new Model('./src/assets/cube/cubeModel.json',this.gl);
+    boxModel = new Model('./src/assets/chair/chairModel.json',this.gl);
 
     constructor() {
         this.initialize();

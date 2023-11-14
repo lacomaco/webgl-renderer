@@ -1,5 +1,5 @@
 export class DirectLight {
-    lightStrength = [1,1,1]; // 백색광
+    lightStrength = [0.5,0.5,0.5]; // 백색광
     lightDirection = [0,0,-1];
     lightPosition = [0,0,10];
 
