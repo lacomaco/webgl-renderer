@@ -9,7 +9,7 @@ const defaultMaterial = {
     ambient: [0.2, 0.2, 0.2],
     diffuse: [0.8, 0.8, 0.8],
     specular: [0.2,0.2,0.2],
-    shininess: 1,
+    shininess: 100,
 }
 
 export class Model {
