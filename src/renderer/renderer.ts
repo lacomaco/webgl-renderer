@@ -1,7 +1,4 @@
 import * as glm from 'gl-matrix';
-import { Circle2D } from "../models/regacy/circle2D";
-import { TextureBox } from "../models/regacy/textureBox";
-import { ModelObject } from '../models/modelObject';
 import { Model } from '../models/model';
 
 
