@@ -5,9 +5,9 @@ type Normal = [number, number, number];
 type Color = [number, number, number];
 
 export interface GeometryData {
-  position: Vertex[];
-  texcoord: Texcoord[];
-  normal: Normal[];
+  position: number[];
+  texcoord: number[];
+  normal: number[];
   color: Color[];
 }
 

@@ -20,6 +20,16 @@ class _Camera {
         100
     );
 
+    setViewUniform(gl: WebGL2RenderingContext, program: WebGLProgram){
+        const viewMatrixLocation = gl.getUniformLocation(program, "u_view");
+        gl.uniformMatrix4fv(viewMatrixLocation, false, this.viewMatrix);
+    }
+
+    setProjectionUniform(gl: WebGL2RenderingContext, program: WebGLProgram){
+        const projectionMatrixLocation = gl.getUniformLocation(program, "u_projection");
+        gl.uniformMatrix4fv(projectionMatrixLocation, false, this.projectionMatrix);
+    };
+
 
     cameraHandle() {
         // @Todo: 카메라 움직임 구현
