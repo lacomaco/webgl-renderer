@@ -197,10 +197,17 @@ export interface Material {
     diffuse?: number[];
     specular?: number[];
     emissive?: number[];
+    // xxxxxxImage는 xxxxMap이 있을때만 존재한다.
     ambientMap?: string;
+    ambientImage?: HTMLImageElement;
     diffuseMap?: string;
+    diffuseImage?: HTMLImageElement;
+    diffuseMapBuffer?: WebGLTexture | null;
     specularMap?: string;
+    specularImage?: HTMLImageElement;
     normalMap?: string;
+    normalImage?: HTMLImageElement;
+    // Image attribute 구분선
     opticalDensity?: number;
     opacity?: number;
     illum?: number;
@@ -279,6 +286,65 @@ export async function loadOBJ(url: string) {
   }
 
   const [obj, mtl] = await Promise.all(promises);
+
+  const imagePromises: Promise<boolean>[] = [];
+
+  Object.keys(mtl).forEach((key)=>{
+    const material = (mtl as {[key:string]:Material})[key];
+
+    const loadImage = (imageName:string)=>{
+      const lastIndex = url.lastIndexOf('/');
+      const baseUrl = url.slice(0,lastIndex);
+
+      return new Promise<HTMLImageElement>((resolve,reject)=>{
+        const image = new Image();
+
+        image.src = `${baseUrl}/${imageName}`;
+
+        image.onload = () => {
+          resolve(image);
+        }
+      });
+    }
+
+    if(material.ambientMap){
+      imagePromises.push(
+        loadImage(material.ambientMap).then((image)=>{
+          material.ambientImage = image;
+          return true;
+        })
+      );
+    }
+
+    if(material.diffuseMap){
+      imagePromises.push(
+        loadImage(material.diffuseMap).then((image)=>{
+          material.diffuseImage = image;
+          return true;
+        })
+      );
+    }
+
+    if(material.specularMap){
+      imagePromises.push(
+        loadImage(material.specularMap).then((image)=>{
+          material.specularImage = image;
+          return true;
+        })
+      );
+    }
+
+    if(material.normalMap){
+      imagePromises.push(
+        loadImage(material.normalMap).then((image)=>{
+          material.normalImage = image;
+          return true;
+        })
+      );
+    }
+  });
+
+  await Promise.all(imagePromises);
 
   return {
     obj: obj as ParsedOBJ,

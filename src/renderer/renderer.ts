@@ -1,12 +1,15 @@
 import * as glm from 'gl-matrix';
 import { Model } from '../models/model';
+import { TextureBox } from '../models/regacy/textureBox';
 
 
 export class Renderer {
     canvas = document.createElement('canvas');
     gl = this.canvas.getContext("webgl2");
 
-    boxModel = new Model('./src/assets/chair/chairModel.json',this.gl);
+    boxModel = new Model('./src/assets/windmill/windmill.json',this.gl);
+
+    test = new TextureBox(this.gl!);
 
     constructor() {
         this.initialize();

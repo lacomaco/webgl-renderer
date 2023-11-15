@@ -165,7 +165,9 @@ export class TextureBox {
 
         this.program = ShaderProgram.createProgram(gl, vertexShader, fragmentShader);
 
+        this.gl?.useProgram(this.program!);
         this.bindBuffer();
+        this.createTexture();
     }
 
     bindBuffer(){
@@ -294,10 +296,8 @@ export class TextureBox {
         if(!this.gl || !this.program || !this.vao) return;
 
         const indexType = this.gl.UNSIGNED_SHORT;
-
         this.gl.useProgram(this.program);
         // texutre를 uniform으로 넘겨주기 때문에 draw시 호출하도록 수정
-        this.createTexture();
         this.createUniformBuffer();
         this.gl.bindVertexArray(this.vao);
         this.gl.drawElements(this.gl.TRIANGLES, this.vertex.index.length, indexType, 0);

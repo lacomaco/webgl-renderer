@@ -4,6 +4,7 @@ import * as glm from 'gl-matrix'
 import {shader} from '../shader/modelShader';
 import {camera} from '../models/camera';
 import { directLight } from "./directLight";
+import * as tw from 'twgl.js';
 
 const defaultMaterial = {
     ambient: [0.2, 0.2, 0.2],
@@ -69,8 +70,6 @@ export class Model {
         if(!this.gl) return;
         const {obj,mtl} = await loadOBJ(this.url);
 
-        console.log(mtl);
-
         obj.geometries.forEach((geometry)=>{
             if(!this.parts[geometry.material]){
                 const materialInfo = (mtl && mtl[geometry.material]) || defaultMaterial;
@@ -92,6 +91,7 @@ export class Model {
             this.totalNormalCount += geometry.data.normal.length;
             this.totalTexCoordCount += geometry.data.texcoord.length;
         });
+        console.log(this.parts);
 
         const vertexShader = ShaderProgram.createShader(this.gl, shader.vs, this.gl.VERTEX_SHADER);
         const fragmentShader = ShaderProgram.createShader(this.gl, shader.fs, this.gl.FRAGMENT_SHADER);
@@ -100,7 +100,12 @@ export class Model {
 
         this.program = ShaderProgram.createProgram(this.gl, vertexShader, fragmentShader);
 
+
         this.createVertexBuffer();
+        Object.keys(this.parts).forEach((materialName)=>{
+            const material = this.parts[materialName].mtl;
+            this.createTextureBuffer(material);
+        });
 
         this.isModelLoaded = true;
     }
@@ -151,13 +156,14 @@ export class Model {
             }
         });
 
+
         const positionAttributeLocation = this.gl?.getAttribLocation(this.program!, 'a_position');
         const normalAttributeLocation = this.gl?.getAttribLocation(this.program!, 'a_normal');
-        // texcoord는 임시로 사용x 필요할때 규격에 맞게 추가할것.
-        // const textureAttributeLocation = this.gl?.getAttribLocation(this.program!, 'a_texcoord');
+        const textureAttributeLocation = this.gl?.getAttribLocation(this.program!, 'a_texcoord');
 
         this.gl?.enableVertexAttribArray(positionAttributeLocation!);
         this.gl?.enableVertexAttribArray(normalAttributeLocation!);
+        this.gl?.enableVertexAttribArray(textureAttributeLocation);
 
         const vertexBuffer = this.gl?.createBuffer();
         this.gl?.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
@@ -181,21 +187,57 @@ export class Model {
             3*Float32Array.BYTES_PER_ELEMENT
         );
 
-        /*
-        // 나중에 텍스처 사용할때 주석 풀고 사용할것
         this.gl?.vertexAttribPointer(
-            textureAttributeLocation!, 
+            textureAttributeLocation, 
             2, 
             this.gl.FLOAT, 
             false, 
             8*Float32Array.BYTES_PER_ELEMENT, 
             6*Float32Array.BYTES_PER_ELEMENT
         );
-        */
+        
     }
     
     // not yet
-    createTextureBuffer() {}
+    /*
+    ambient Map
+    diffuse Map
+    specular Map
+    normal Map
+    */
+    createTextureBuffer(mtl: Material) {
+        if(!this.gl || !this.program) return;
+
+            const texture = this.gl.createTexture();
+            this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+            this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+
+            // 밉맵을 사용하지 않는 파라메터를 설정합니다.
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+
+            this.gl.texImage2D(
+                this.gl.TEXTURE_2D,
+                0,
+                this.gl.RGBA,
+                this.gl.RGBA,
+                this.gl.UNSIGNED_BYTE,
+                mtl.diffuseImage!
+            )
+
+            mtl.diffuseMapBuffer = texture;
+    }
+
+    changeTextureBuffer(mtl: Material) {
+        const u_imageLocation = this.gl?.getUniformLocation(this.program!, 'u_diffuseMap');
+        if(!u_imageLocation || !mtl.diffuseMapBuffer) return;
+        this.gl?.uniform1i(u_imageLocation, 0);
+
+        this.gl?.activeTexture(this.gl.TEXTURE0);
+        this.gl?.bindTexture(this.gl.TEXTURE_2D, mtl.diffuseMapBuffer)
+    }
 
     createUniformBuffer() {
         if(!this.gl || !this.program) return;
@@ -204,8 +246,6 @@ export class Model {
         this.uniformBuffer.diffuse = this.gl.getUniformLocation(this.program, 'u_materialDiffuse');
         this.uniformBuffer.specular = this.gl.getUniformLocation(this.program, 'u_materialSpecular');
         this.uniformBuffer.shininess = this.gl.getUniformLocation(this.program, 'u_materialShininess');
-
-
     }
     
     setMaterialUniformBuffer(material: Material) {
@@ -239,10 +279,6 @@ export class Model {
         this.gl?.uniformMatrix4fv(worldInvTransposeMatrixLocation!, false, worldInvTransposeMatrix);
     }
 
-    createTexture() {
-        // 나중에 텍스처 필요할때 구현할것.
-    }
-
     render(){
         if(!this.gl || !this.program || !this.vao) return;
 
@@ -261,6 +297,8 @@ export class Model {
         let currentOffset = 0;
         Object.keys(this.parts).forEach((materialName)=>{
             const material = this.parts[materialName].mtl;
+            // this.createTextureBuffer(material);
+            this.changeTextureBuffer(material);
             this.setMaterialUniformBuffer(material);
 
             const objs = this.parts[materialName].obj;
@@ -276,7 +314,5 @@ export class Model {
                 currentOffset += vertexCount;
             }
         });
-
-
     }
 }

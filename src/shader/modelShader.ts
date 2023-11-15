@@ -25,12 +25,24 @@ uniform vec3 u_materialDiffuse;
 uniform vec3 u_materialSpecular;
 uniform float u_materialShininess;
 // Material 구조 끝
+
+// image
+uniform int u_ambientuse;
+uniform int u_diffuseuse;
+uniform int u_specularuse;
+uniform int u_normaluse;
+
+uniform sampler2D u_ambientMap;
+uniform sampler2D u_diffuseMap;
+uniform sampler2D u_specularMap;
+uniform sampler2D u_normalMap;
 `;
 
 export const shader = {
     vs: `# version 300 es
 in vec4 a_position;
 in vec4 a_normal;
+in vec2 a_texcoord;
 
 uniform mat4 u_world;
 uniform mat4 u_view;
@@ -42,11 +54,13 @@ ${commonShader}
     
 out vec3 v_normal;
 out vec4 v_pos;
+out vec2 v_texcoord;
 
 void main(){
     gl_Position = u_projection * u_view * u_world * a_position;
     v_normal = normalize((u_worldInvTranspose * a_normal).xyz);
     v_pos = gl_Position;
+    v_texcoord = a_texcoord;
 }
 `,
     fs: `# version 300 es
@@ -57,6 +71,7 @@ ${commonShader}
 uniform vec3 cameraPosition;
 in vec3 v_normal;
 in vec4 v_pos;
+in vec2 v_texcoord;
 
 vec3 blinnPhong(
     vec3 lightStrength,
@@ -105,19 +120,24 @@ vec3 directLight(
 out vec4 outColor;
 
 void main(){
+    vec3 defaultDiffuse = u_materialDiffuse;
+
+    vec4 diffuseMapColor = texture(u_diffuseMap, v_texcoord);
+    defaultDiffuse = defaultDiffuse * diffuseMapColor.xyz;
+
     vec3 toEye = normalize(cameraPosition - v_pos.xyz);
     vec3 color = directLight(u_lightStrength, 
         u_lightDirection, 
         u_lightPosition, 
         u_materialAmbient, 
-        u_materialDiffuse, 
+        defaultDiffuse, 
         u_materialSpecular, 
         u_materialShininess, 
         v_normal, 
         toEye
     );
 
-    outColor = vec4(color.xyz, 1.0);
+    outColor = vec4(color.xyz,1);
 }  
 `,
 }
