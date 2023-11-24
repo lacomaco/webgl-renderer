@@ -1,6 +1,7 @@
 import * as glm from 'gl-matrix';
 import { Model } from '../models/model';
 import { TextureBox } from '../models/regacy/textureBox';
+import { ThreeDObject } from '../models/three-d-object';
 
 
 export class Renderer {
@@ -10,6 +11,8 @@ export class Renderer {
     boxModel = new Model('./src/assets/windmill/windmill.json',this.gl);
 
     test = new TextureBox(this.gl!);
+
+    renderList: ThreeDObject = [];
 
     constructor() {
         this.initialize();

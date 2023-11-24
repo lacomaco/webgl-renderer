@@ -19,15 +19,10 @@ const MaterialLoaders = {
     [ModelType.MTL]: new MTLLoader(),
 }
 
-export interface Vertex {
-    // 3차원 벡터
-    position: number[],
-    normal: number[],
-    texcoord: number[],
-}
-
 export interface MeshData {
-    vertices: Vertex[],
+    position: TypedArray,
+    normal: TypedArray,
+    texcoord: TypedArray,
     indices: TypedArray,
     materialName?: string,
 }
@@ -98,43 +93,20 @@ function createMeshData(object: Object3D<Object3DEventMap>,meshDatas: MeshData[]
     const normal = typeCastingObj.geometry.getAttribute('normal').array;
     const texcoord = typeCastingObj.geometry.getAttribute('uv').array;
 
-    // create vertex
-    let count = 0;
-    const vertices: Vertex[] = [];
-
-    while(count < position.length/3) {
-        const vertex: Vertex = {
-            position: [position[count*3],position[count*3+1],position[count*3+2]],
-            normal: [normal[count*3],normal[count*3+1],normal[count*3+2]],
-            texcoord: [texcoord[count*2],texcoord[count*2+1]],
-        }
-        
-        vertices.push(vertex);
-        count++;
-    }
-
     // create indices
     let indices = typeCastingObj.geometry.index?.array;
 
     if(!indices) {
-        const buffers = [];
-
-        for(let i = 0; i < vertices.length; i++) {
-            buffers.push(
-                vertices[i].position[0],
-                vertices[i].position[1],
-                vertices[i].position[2]
-            );
-        }
-
-        indices = new Uint16Array(buffers);
+        indices = position;
     }
 
     //find materialName
     const materialName = (typeCastingObj.material as any).name;
 
     meshDatas.push({
-        vertices,
+        position,
+        normal,
+        texcoord,
         indices,
         materialName,
     })
