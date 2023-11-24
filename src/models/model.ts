@@ -91,7 +91,6 @@ export class Model {
             this.totalNormalCount += geometry.data.normal.length;
             this.totalTexCoordCount += geometry.data.texcoord.length;
         });
-        console.log(this.parts);
 
         const vertexShader = ShaderProgram.createShader(this.gl, shader.vs, this.gl.VERTEX_SHADER);
         const fragmentShader = ShaderProgram.createShader(this.gl, shader.fs, this.gl.FRAGMENT_SHADER);
