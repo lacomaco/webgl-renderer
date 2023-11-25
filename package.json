@@ -10,7 +10,7 @@
     "dev": "nodemon"
   },
   "author": "",
-  "license": "ISC",
+  "license": "cc-by-4.0",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^24.1.0",
     "@rollup/plugin-json": "^6.0.0",
