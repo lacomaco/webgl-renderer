@@ -1,16 +1,16 @@
 /*
-* 메모용
-* v: 정점
-* vt: 텍스쳐 좌표
-* vn: 법선 벡터
-* f: 면 (index)
-* f 1 2 3 [1,2,3 인덱스]
-* f 1/1 2/2 3/3 [1,2,3 정점/텍스쳐 좌표]
-* f 1/1/1 2/2/2 3/3/3 [1,2,3 정점/텍스쳐 좌표/법선 벡터]
-* f 1//1 2//2 3//3 [1,2,3 정점//법선 벡터]
-*
-* mtllib: 재질 파일
-*/
+ * 메모용
+ * v: 정점
+ * vt: 텍스쳐 좌표
+ * vn: 법선 벡터
+ * f: 면 (index)
+ * f 1 2 3 [1,2,3 인덱스]
+ * f 1/1 2/2 3/3 [1,2,3 정점/텍스쳐 좌표]
+ * f 1/1/1 2/2/2 3/3/3 [1,2,3 정점/텍스쳐 좌표/법선 벡터]
+ * f 1//1 2//2 3//3 [1,2,3 정점//법선 벡터]
+ *
+ * mtllib: 재질 파일
+ */
 
 const commonShader = `
 // Light 구조
@@ -39,7 +39,7 @@ uniform sampler2D u_normalMap;
 `;
 
 export const shader = {
-    vs: `# version 300 es
+  vs: `# version 300 es
 in vec4 a_position;
 in vec4 a_normal;
 in vec2 a_texcoord;
@@ -63,7 +63,7 @@ void main(){
     v_texcoord = a_texcoord;
 }
 `,
-    fs: `# version 300 es
+  fs: `# version 300 es
 precision highp float;
 
 ${commonShader}
@@ -140,4 +140,4 @@ void main(){
     outColor = vec4(color.xyz,1);
 }  
 `,
-}
+};

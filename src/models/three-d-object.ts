@@ -1,5 +1,7 @@
 export class ThreeDObject {
-    constructor() {
-        
-    }
+  constructor() {}
+
+  async objectInit() {}
+
+  render() {}
 }
