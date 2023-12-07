@@ -1,3 +1,5 @@
+import { mat4 } from "gl-matrix";
+
 export class Shader {
   vertexShader: WebGLShader;
   fragmentShader: WebGLShader;
@@ -63,7 +65,7 @@ export class Shader {
     );
   }
 
-  setMat4(name: string, value: number[]) {
+  setMat4(name: string, value: mat4) {
     this.gl.uniformMatrix4fv(
       this.gl.getUniformLocation(this.program, name),
       false,

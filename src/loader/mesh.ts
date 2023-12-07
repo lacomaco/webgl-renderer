@@ -1,5 +1,7 @@
+import { camera } from "../models/camera";
 import { Shader } from "../shader/shader";
 import { textureMap } from "./model";
+import * as glm from 'gl-matrix';
 
 // sum: 8
 export interface Vertex {
@@ -32,6 +34,13 @@ export class Mesh {
   private vbo!: WebGLBuffer; // vertex buffer object
   private ebo!: WebGLBuffer; // element buffer object
 
+  worldData = {
+    currentXRotate: 0,
+    xIncrease: 0.008,
+    currentYRotate: 0,
+    yIncrease: 0.008,
+}
+
   constructor(
     public vertices: Vertex[],
     public indices: number[],
@@ -55,7 +64,7 @@ export class Mesh {
       this.gl.STATIC_DRAW,
     );
 
-    // vertex attribute 설정
+    // vertex attribute 설정 position
     this.gl.enableVertexAttribArray(0);
     this.gl.vertexAttribPointer(
       0,
@@ -66,7 +75,7 @@ export class Mesh {
       0,
     );
 
-    // position
+    // normal
     this.gl.enableVertexAttribArray(1);
     this.gl.vertexAttribPointer(
       1,
@@ -77,7 +86,7 @@ export class Mesh {
       3 * Float32Array.BYTES_PER_ELEMENT,
     );
 
-    // normal
+    // texcoord
     this.gl.enableVertexAttribArray(2);
     this.gl.vertexAttribPointer(
       2,
@@ -118,7 +127,21 @@ export class Mesh {
         textureMap.get(this.textures[i].id) as WebGLTexture
       );
     }
- 
+
+    //camera.setCameraPositionUniform(this.gl, shader.program);
+    camera.setViewUniform(this.gl, shader.program);
+    camera.setProjectionUniform(this.gl, shader.program);
+
+    const defaultModel = glm.mat4.create();
+    glm.mat4.scale(defaultModel, defaultModel, [0.009, 0.009, 0.009]);
+    glm.mat4.rotateX(defaultModel, defaultModel, this.worldData.currentXRotate);
+    glm.mat4.rotateY(defaultModel, defaultModel, this.worldData.currentYRotate);
+
+    this.worldData.currentXRotate += this.worldData.xIncrease;
+    this.worldData.currentYRotate += this.worldData.yIncrease;
+
+    shader.setMat4("model", defaultModel);
+
     this.gl.drawElements(
       this.gl.TRIANGLES,
       this.indices.length,

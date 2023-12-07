@@ -38,6 +38,7 @@ export class Model {
   }
 
   draw(shader: Shader) {
+    if(this.meshes.length === 0) return;
     this.meshes.forEach((mesh) => {
       mesh.draw(shader);
     });
@@ -86,7 +87,7 @@ export class Model {
     let indices: number[] = [];
     const textures: Texture[] = [];
 
-    const limit = mesh.geometry.attributes.position.count / 3;
+    const limit = mesh.geometry.attributes.position.count;
     let count = 0;
 
     // vertices 작업
@@ -120,7 +121,7 @@ export class Model {
       indices = [...mesh.geometry.attributes.index.array];
     } else {
       // index없으면 position 순서대로 그림
-      for(let i=0; i< mesh.geometry.attributes.position.count/3; i++) {
+      for(let i=0; i< mesh.geometry.attributes.position.count; i++) {
         indices.push(i);
       }
     }

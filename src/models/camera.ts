@@ -29,14 +29,14 @@ class _Camera {
   }
 
   setViewUniform(gl: WebGL2RenderingContext, program: WebGLProgram) {
-    const viewMatrixLocation = gl.getUniformLocation(program, "u_view");
+    const viewMatrixLocation = gl.getUniformLocation(program, "view");
     gl.uniformMatrix4fv(viewMatrixLocation, false, this.viewMatrix);
   }
 
   setProjectionUniform(gl: WebGL2RenderingContext, program: WebGLProgram) {
     const projectionMatrixLocation = gl.getUniformLocation(
       program,
-      "u_projection",
+      "projection",
     );
     gl.uniformMatrix4fv(projectionMatrixLocation, false, this.projectionMatrix);
   }
