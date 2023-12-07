@@ -1,4 +1,4 @@
-import { camera } from "../models/camera";
+import { camera } from "../caremalight/camera";
 import { Shader } from "../shader/shader";
 import { textureMap } from "./model";
 import * as glm from 'gl-matrix';
