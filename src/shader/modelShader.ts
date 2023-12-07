@@ -52,22 +52,26 @@ export const shader = {
 
   void main() {
     TexCoords = aTexCoords;
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    gl_Position = vec4(aPos.x * 0.01, aPos.y * 0.01, aPos.z * 0.01, 1.0);
   }
 
 `,
   fs: `# version 300 es
 precision highp float;
 
+struct Material {
+  sampler2D texture_diffuse1;
+};
+
+uniform Material material;
+
 out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D texture_diffuse1;
-
 void main()
 {    
-    FragColor = texture(texture_diffuse1, TexCoords);
+    FragColor = texture(material.texture_diffuse1, TexCoords);
 }
 `,
 };

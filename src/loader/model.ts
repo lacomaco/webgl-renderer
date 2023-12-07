@@ -10,10 +10,13 @@ import {
   Mesh as TMESH,
   BufferGeometry,
   Material,
-  MeshLambertMaterial
+  MeshLambertMaterial,
+  LoadingManager
 } from "three";
 
-export const textureMap = new Map<number, WebGLTexture>();
+export const textureMap = new Map<number, any>();
+
+const manager = new LoadingManager();
 
 export class Model {
   public isModelLoaded = new BehaviorSubject(false);
@@ -21,9 +24,9 @@ export class Model {
   private meshes: Mesh[] = [];
   private directory: string = "";
 
-  fbxLoader = new FBXLoader();
-  objLoader = new OBJLoader();
-  mtlLoader = new MTLLoader();
+  fbxLoader = new FBXLoader(manager);
+  objLoader = new OBJLoader(manager);
+  mtlLoader = new MTLLoader(manager);
 
   constructor(
     // 나중에 undefind 지우고 실구현할거임
@@ -42,10 +45,10 @@ export class Model {
 
   private async init() {
     const result = await this.loadModel();
-    console.log(result);
-    this.processNode(result);
-
-    this.disposeLoadeObj(result);
+    manager.onLoad=()=>{
+      this.processNode(result);
+      this.disposeLoadeObj(result); 
+    }
   }
 
   private loadModel(): Promise<Group> {
@@ -79,9 +82,6 @@ export class Model {
   }
 
   private processMesh(mesh: TMESH) {
-    /*
-      three mesh -> mesh로 변환해주세요 ~ㅇㅅㅇ~
-    */
     const vertices: Vertex[] = [];
     let indices: number[] = [];
     const textures: Texture[] = [];
@@ -125,13 +125,15 @@ export class Model {
       }
     }
 
+
     // diffuse
     const covertedMaterial = mesh.material as MeshLambertMaterial;
     if(covertedMaterial.map){
         textures.push({
             id: covertedMaterial.map.id,
             type: TextureType.Diffuse,
-        })
+        });
+        this.createTexture(covertedMaterial.map.id,covertedMaterial.map.source.data);
     }
 
     /*
@@ -182,39 +184,35 @@ export class Model {
     );
   }
 
-  private createVertexData(vertices: number[]) {
-    const uniqueVertices:number[] = [];
-    const indices:number[] = [];
-    const vertexMap = new Map<string,number>();
-
-    for (let i = 0; i < vertices.length; i += 3) {
-        const vertex = [vertices[i], vertices[i + 1], vertices[i + 2]].join(',');
-
-        if (vertexMap.has(vertex)) {
-            // 중복 정점의 인덱스 사용
-            indices.push(vertexMap.get(vertex) as number);
-        } else {
-            // 새 정점 추가 및 인덱스 할당
-            const index = uniqueVertices.length / 3;
-            uniqueVertices.push(vertices[i], vertices[i + 1], vertices[i + 2]);
-            vertexMap.set(vertex, index);
-            indices.push(index);
-        }
-    }
-
-    return { uniqueVertices, indices };
-}
-
 
   private createTexture(id: number,image: HTMLImageElement){
-    if(textureMap.has(id)){
+    if(textureMap.has(id) || !image){
         return;
     }
-    
+
     const texture = this.gl.createTexture() as WebGLTexture ;
     this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
     this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
-
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_WRAP_S,
+      this.gl.CLAMP_TO_EDGE,
+    );
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_WRAP_T,
+      this.gl.CLAMP_TO_EDGE,
+    );
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_MIN_FILTER,
+      this.gl.NEAREST,
+    );
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_MAG_FILTER,
+      this.gl.NEAREST,
+    );
     this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image);
     textureMap.set(id,texture);
   }

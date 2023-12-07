@@ -41,41 +41,6 @@ export class Mesh {
     this.setupMesh();
   }
 
-  draw(shader: Shader): void {
-    /*
-      gl.drawElements()를 사용하여 메쉬를 지우는 코드 작성
-    */
-    let diffuseN = 1;
-    let specularN = 1;
-    for (let i = 0; i < this.textures.length; i++) {
-      this.gl.activeTexture(this.gl.TEXTURE0 + i);
-      let number;
-      let name = this.textures[i].type;
-      if (name === TextureType.Diffuse) {
-        number = diffuseN++;
-      } else if (name === TextureType.Specular) {
-        number = specularN++;
-      }
-
-      shader.setInt("material." + name + number, i);
-      this.gl.bindTexture(
-        this.gl.TEXTURE_2D, 
-        textureMap.get(this.textures[i].id) as WebGLTexture
-      );
-    }
-    this.gl.activeTexture(this.gl.TEXTURE0);
-
-    this.gl.bindVertexArray(this.vao);
-    this.gl.drawElements(
-      this.gl.TRIANGLES,
-      this.indices.length,
-      this.gl.UNSIGNED_INT,
-      0,
-    );
-    // unbind
-    this.gl.bindVertexArray(null);
-  }
-
   setupMesh(): void {
     this.vao = this.gl.createVertexArray() as WebGLVertexArrayObject;
     this.vbo = this.gl.createBuffer() as WebGLBuffer;
@@ -123,8 +88,43 @@ export class Mesh {
       6 * Float32Array.BYTES_PER_ELEMENT,
     );
 
-    // unbind
-    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
+
+    // index 설정
+    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.ebo);
+    this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(this.indices), this.gl.STATIC_DRAW);
+  }
+
+  draw(shader: Shader): void {
+    /*
+      gl.drawElements()를 사용하여 메쉬를 지우는 코드 작성
+    */
+    shader.use();
+    this.gl.bindVertexArray(this.vao);
+    let diffuseN = 1;
+    let specularN = 1;
+    for (let i = 0; i < this.textures.length; i++) {
+      let number;
+      let name = this.textures[i].type;
+      if (name === TextureType.Diffuse) {
+        number = diffuseN++;
+      } else if (name === TextureType.Specular) {
+        number = specularN++;
+      }
+
+      shader.setInt("material." + name + number, i);
+      this.gl.activeTexture(this.gl.TEXTURE0 + i);
+      this.gl.bindTexture(
+        this.gl.TEXTURE_2D, 
+        textureMap.get(this.textures[i].id) as WebGLTexture
+      );
+    }
+ 
+    this.gl.drawElements(
+      this.gl.TRIANGLES,
+      this.indices.length,
+      this.gl.UNSIGNED_INT,
+      0,
+    );
   }
 
   vertexSerialization() {
