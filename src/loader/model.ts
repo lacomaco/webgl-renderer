@@ -13,6 +13,8 @@ import {
   MeshLambertMaterial
 } from "three";
 
+export const textureMap = new Map<number, WebGLTexture>();
+
 export class Model {
   public isModelLoaded = new BehaviorSubject(false);
 
@@ -25,7 +27,7 @@ export class Model {
 
   constructor(
     // 나중에 undefind 지우고 실구현할거임
-    private gl: WebGL2RenderingContext | string,
+    private gl: WebGL2RenderingContext,
     private directoryPath: string,
     private mtl?: string,
   ) {
@@ -69,8 +71,8 @@ export class Model {
 
   private processNode(group: Group | Object3D) {
     if (group instanceof TMESH) {
-      //const mesh = this.processMesh(group) as Mesh;
-      //this.meshes.push(mesh);
+      const mesh = this.processMesh(group);
+      this.meshes.push(mesh);
     }
 
     group.children.forEach((group) => this.processNode(group));
@@ -78,10 +80,10 @@ export class Model {
 
   private processMesh(mesh: TMESH) {
     /*
-        three mesh -> mesh로 변환해주세요 ~ㅇㅅㅇ~
-        */
+      three mesh -> mesh로 변환해주세요 ~ㅇㅅㅇ~
+    */
     const vertices: Vertex[] = [];
-    const indices: number[] = [];
+    let indices: number[] = [];
     const textures: Texture[] = [];
 
     const limit = mesh.geometry.attributes.position.count / 3;
@@ -114,8 +116,13 @@ export class Model {
     }
 
     // indices 작업
-    for(let i=0; i < mesh.geometry.attributes.index.count; i++) {
-      indices.push(mesh.geometry.attributes.index.array[i]);
+    if(mesh.geometry.attributes.index){
+      indices = [...mesh.geometry.attributes.index.array];
+    } else {
+      // index없으면 position 순서대로 그림
+      for(let i=0; i< mesh.geometry.attributes.position.count/3; i++) {
+        indices.push(i);
+      }
     }
 
     // diffuse
@@ -145,7 +152,8 @@ export class Model {
         textures.push({
             id: covertedMaterial.aoMap.id,
             type: TextureType.Ambient,
-        })
+        });
+        this.createTexture(covertedMaterial.aoMap.id,covertedMaterial.aoMap.source.data);
     }
 
     // specular
@@ -154,6 +162,7 @@ export class Model {
             id: covertedMaterial.specularMap.id,
             type: TextureType.Specular,
         })
+        this.createTexture(covertedMaterial.specularMap.id,covertedMaterial.specularMap.source.data);
     }
 
     // normalMap
@@ -162,25 +171,52 @@ export class Model {
             id: covertedMaterial.normalMap.id,
             type: TextureType.Normal,
         })
+        this.createTexture(covertedMaterial.normalMap.id,covertedMaterial.normalMap.source.data);
     }
-
-    // heightMap
-    if(covertedMaterial.displacementMap){
-        textures.push({
-            id: covertedMaterial.displacementMap.id,
-            type: TextureType.Height,
-        })
-    }
-
 
     return new Mesh(
         vertices,
         indices,
         textures,
-        // @Todo gl undefined 빠지면 이것도 수정할것.
-        this.gl as WebGL2RenderingContext,
+        this.gl,
     );
+  }
+
+  private createVertexData(vertices: number[]) {
+    const uniqueVertices:number[] = [];
+    const indices:number[] = [];
+    const vertexMap = new Map<string,number>();
+
+    for (let i = 0; i < vertices.length; i += 3) {
+        const vertex = [vertices[i], vertices[i + 1], vertices[i + 2]].join(',');
+
+        if (vertexMap.has(vertex)) {
+            // 중복 정점의 인덱스 사용
+            indices.push(vertexMap.get(vertex) as number);
+        } else {
+            // 새 정점 추가 및 인덱스 할당
+            const index = uniqueVertices.length / 3;
+            uniqueVertices.push(vertices[i], vertices[i + 1], vertices[i + 2]);
+            vertexMap.set(vertex, index);
+            indices.push(index);
+        }
+    }
+
+    return { uniqueVertices, indices };
+}
+
+
+  private createTexture(id: number,image: HTMLImageElement){
+    if(textureMap.has(id)){
+        return;
+    }
     
+    const texture = this.gl.createTexture() as WebGLTexture ;
+    this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+
+    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image);
+    textureMap.set(id,texture);
   }
 
   private disposeLoadeObj(node: Object3D | Group) {
