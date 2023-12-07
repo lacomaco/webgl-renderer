@@ -1,16 +1,10 @@
+import { Shader } from "../shader/shader";
+
 // sum: 8
 export interface Vertex {
   position: [number, number, number];
   normal: [number, number, number];
   texcoords: [number, number];
-}
-
-export enum TextureType {
-  Diffuse = 0,
-  Specular = 1,
-  Ambient = 2,
-  Normal = 3,
-  Height = 4,
 }
 
 /*
@@ -19,12 +13,20 @@ export enum TextureType {
  * texture_specularN;
  * texture_normalN;
  */
+export enum TextureType {
+  Diffuse = 'texture_diffuse',
+  Specular = 'texture_specular',
+  Ambient = 'texture_ambient',
+  Normal = 'texture_normal',
+  Height = 'texture_height',
+}
+
 export interface Texture {
   id: number; // 텍스처 고유 id값. 텍스처를 찾을 때 사용
   type: TextureType; // diffuse, specular, normal, height
 }
 
-class Mesh {
+export class Mesh {
   private vao!: WebGLVertexArrayObject;
   private vbo!: WebGLBuffer; // vertex buffer object
   private ebo!: WebGLBuffer; // element buffer object
@@ -38,13 +40,36 @@ class Mesh {
     this.setupMesh();
   }
 
-  draw(): void {
+  draw(shader: Shader): void {
     /*
-        gl.drawElements()를 사용하여 메쉬를 지우는 코드 작성
-        */
+      gl.drawElements()를 사용하여 메쉬를 지우는 코드 작성
+    */
     let diffuseN = 1;
     let specularN = 1;
-    for (let i = 0; i < this.textures.length; i++) {}
+    for (let i = 0; i < this.textures.length; i++) {
+      this.gl.activeTexture(this.gl.TEXTURE0 + i);
+      let number;
+      let name = this.textures[i].type;
+      if(name === TextureType.Diffuse){
+        number = diffuseN++;
+      } else if (name === TextureType.Specular){
+        number = specularN++;
+      }
+
+      shader.setInt('material.'+name+number,i);
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[i].id);
+    }
+    this.gl.activeTexture(this.gl.TEXTURE0);
+
+    this.gl.bindVertexArray(this.vao);
+    this.gl.drawElements(
+      this.gl.TRIANGLES, 
+      this.indices.length, 
+      this.gl.UNSIGNED_INT, 
+      0
+    )
+    // unbind
+    this.gl.bindVertexArray(0);;
   }
 
   setupMesh(): void {
