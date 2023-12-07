@@ -1,10 +1,7 @@
-import { Model } from "./loader/model"
+import { Model } from "./loader/model";
 
 // fbx 로드 테스트용도
-const fbxModel = new Model(
-  '',
-  "./src/assets/zelda/zeldaPosed001.fbx"
-);
+const fbxModel = new Model("", "./src/assets/zelda/zeldaPosed001.fbx");
 
 // obj 로드 테스트 용도
 /*

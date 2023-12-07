@@ -14,11 +14,11 @@ export interface Vertex {
  * texture_normalN;
  */
 export enum TextureType {
-  Diffuse = 'texture_diffuse',
-  Specular = 'texture_specular',
-  Ambient = 'texture_ambient',
-  Normal = 'texture_normal',
-  Height = 'texture_height',
+  Diffuse = "texture_diffuse",
+  Specular = "texture_specular",
+  Ambient = "texture_ambient",
+  Normal = "texture_normal",
+  Height = "texture_height",
 }
 
 export interface Texture {
@@ -50,26 +50,26 @@ export class Mesh {
       this.gl.activeTexture(this.gl.TEXTURE0 + i);
       let number;
       let name = this.textures[i].type;
-      if(name === TextureType.Diffuse){
+      if (name === TextureType.Diffuse) {
         number = diffuseN++;
-      } else if (name === TextureType.Specular){
+      } else if (name === TextureType.Specular) {
         number = specularN++;
       }
 
-      shader.setInt('material.'+name+number,i);
+      shader.setInt("material." + name + number, i);
       this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[i].id);
     }
     this.gl.activeTexture(this.gl.TEXTURE0);
 
     this.gl.bindVertexArray(this.vao);
     this.gl.drawElements(
-      this.gl.TRIANGLES, 
-      this.indices.length, 
-      this.gl.UNSIGNED_INT, 
-      0
-    )
+      this.gl.TRIANGLES,
+      this.indices.length,
+      this.gl.UNSIGNED_INT,
+      0,
+    );
     // unbind
-    this.gl.bindVertexArray(0);;
+    this.gl.bindVertexArray(0);
   }
 
   setupMesh(): void {
