@@ -61,6 +61,8 @@ precision highp float;
 
 struct Material {
   sampler2D texture_diffuse1;
+  vec3 diffuse;
+  vec3 specular;
 };
 
 uniform Material material;
@@ -70,8 +72,8 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 void main()
-{    
-    FragColor = texture(material.texture_diffuse1, TexCoords);
+{   
+    FragColor = texture(material.texture_diffuse1, TexCoords) * vec4(material.diffuse, 1.0);
 }
 `,
 };

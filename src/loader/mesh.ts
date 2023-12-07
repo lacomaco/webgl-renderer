@@ -1,7 +1,8 @@
 import { camera } from "../caremalight/camera";
 import { Shader } from "../shader/shader";
 import { textureMap } from "./model";
-import * as glm from 'gl-matrix';
+import { Mesh as TMESH } from "three";
+import * as glm from "gl-matrix";
 
 // sum: 8
 export interface Vertex {
@@ -29,6 +30,18 @@ export interface Texture {
   type: TextureType; // diffuse, specular, normal, height
 }
 
+export interface VertexMaterial {
+  ambient: [number, number, number];
+  diffuse: [number, number, number];
+  specular: [number, number, number];
+  shininess: number;
+}
+
+export interface MeshMaterial {
+  texture: Texture[];
+  material: VertexMaterial;
+}
+
 export class Mesh {
   private vao!: WebGLVertexArrayObject;
   private vbo!: WebGLBuffer; // vertex buffer object
@@ -39,13 +52,14 @@ export class Mesh {
     xIncrease: 0.008,
     currentYRotate: 0,
     yIncrease: 0.008,
-}
+  };
 
   constructor(
     public vertices: Vertex[],
     public indices: number[],
-    public textures: Texture[],
+    private materials: MeshMaterial[],
     private gl: WebGL2RenderingContext,
+    private mesh: TMESH,
   ) {
     this.setupMesh();
   }
@@ -97,43 +111,25 @@ export class Mesh {
       6 * Float32Array.BYTES_PER_ELEMENT,
     );
 
-
     // index 설정
     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.ebo);
-    this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(this.indices), this.gl.STATIC_DRAW);
+    this.gl.bufferData(
+      this.gl.ELEMENT_ARRAY_BUFFER,
+      new Uint32Array(this.indices),
+      this.gl.STATIC_DRAW,
+    );
   }
 
-  draw(shader: Shader): void {
-    /*
-      gl.drawElements()를 사용하여 메쉬를 지우는 코드 작성
-    */
+  draw(shader: Shader) {
     shader.use();
     this.gl.bindVertexArray(this.vao);
-    let diffuseN = 1;
-    let specularN = 1;
-    for (let i = 0; i < this.textures.length; i++) {
-      let number;
-      let name = this.textures[i].type;
-      if (name === TextureType.Diffuse) {
-        number = diffuseN++;
-      } else if (name === TextureType.Specular) {
-        number = specularN++;
-      }
-
-      shader.setInt("material." + name + number, i);
-      this.gl.activeTexture(this.gl.TEXTURE0 + i);
-      this.gl.bindTexture(
-        this.gl.TEXTURE_2D, 
-        textureMap.get(this.textures[i].id) as WebGLTexture
-      );
-    }
 
     //camera.setCameraPositionUniform(this.gl, shader.program);
     camera.setViewUniform(this.gl, shader.program);
     camera.setProjectionUniform(this.gl, shader.program);
 
     const defaultModel = glm.mat4.create();
-    glm.mat4.scale(defaultModel, defaultModel, [0.009, 0.009, 0.009]);
+    glm.mat4.scale(defaultModel, defaultModel, [0.3, 0.3, 0.3]);
     glm.mat4.rotateX(defaultModel, defaultModel, this.worldData.currentXRotate);
     glm.mat4.rotateY(defaultModel, defaultModel, this.worldData.currentYRotate);
 
@@ -142,11 +138,72 @@ export class Mesh {
 
     shader.setMat4("model", defaultModel);
 
+    if (this.materials.length === 1) {
+      this.callDraw(shader, this.materials[0], 0, this.indices.length);
+      return;
+    }
+
+    this.materials.forEach((material, index) => {
+      const group = this.mesh.geometry.groups[index];
+      this.callDraw(shader, material, group.start, group.count);
+    });
+  }
+
+  callDraw(
+    shader: Shader,
+    meshMaterial: MeshMaterial,
+    start: number,
+    count: number,
+  ): void {
+    const { texture, material } = meshMaterial;
+    if (texture.length === 0) {
+      texture.push({
+        id: Infinity,
+        type: TextureType.Diffuse,
+      });
+      texture.push({
+        id: Infinity,
+        type: TextureType.Specular,
+      });
+      texture.push({
+        id: Infinity,
+        type: TextureType.Normal,
+      });
+    }
+
+    let diffuseN = 1;
+    let specularN = 1;
+    for (let i = 0; i < texture.length; i++) {
+      let number;
+      let name = texture[i].type;
+      if (name === TextureType.Diffuse) {
+        number = diffuseN++;
+      } else if (name === TextureType.Specular) {
+        number = specularN++;
+      }
+
+      shader.setInt("material." + name + number, i);
+      this.gl.activeTexture(this.gl.TEXTURE0 + i);
+      if (texture[i].id === Infinity) {
+        this.gl.bindTexture(this.gl.TEXTURE_2D, Shader.defaultTexture);
+      } else {
+        this.gl.bindTexture(
+          this.gl.TEXTURE_2D,
+          textureMap.get(texture[i].id) as WebGLTexture,
+        );
+      }
+    }
+
+    shader.setVec3("material.ambient", material.ambient);
+    shader.setVec3("material.diffuse", material.diffuse);
+    shader.setVec3("material.specular", material.specular);
+    shader.setFloat("material.shininess", material.shininess);
+
     this.gl.drawElements(
       this.gl.TRIANGLES,
-      this.indices.length,
+      count,
       this.gl.UNSIGNED_INT,
-      0,
+      start * Uint32Array.BYTES_PER_ELEMENT,
     );
   }
 

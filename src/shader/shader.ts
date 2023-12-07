@@ -5,6 +5,7 @@ export class Shader {
   fragmentShader: WebGLShader;
   gl: WebGL2RenderingContext;
   program: WebGLProgram;
+  static defaultTexture: WebGLTexture | null = null;
 
   constructor(
     vertex: string,
@@ -16,6 +17,40 @@ export class Shader {
     this.fragmentShader = this.createShader(fragment, this.gl.FRAGMENT_SHADER);
 
     this.program = this.createProgram();
+
+    if (!Shader.defaultTexture) {
+      this.createWhiteDefaultTexture();
+    }
+  }
+
+  createWhiteDefaultTexture() {
+    const texture = this.gl.createTexture();
+    this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+
+    const whitePixel = new Uint8Array([255, 255, 255, 255]);
+    this.gl.texImage2D(
+      this.gl.TEXTURE_2D,
+      0,
+      this.gl.RGBA,
+      1,
+      1,
+      0,
+      this.gl.RGBA,
+      this.gl.UNSIGNED_BYTE,
+      whitePixel,
+    );
+
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_MIN_FILTER,
+      this.gl.LINEAR,
+    );
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_MAG_FILTER,
+      this.gl.LINEAR,
+    );
+    Shader.defaultTexture = texture;
   }
 
   use() {
