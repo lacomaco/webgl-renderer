@@ -40,104 +40,34 @@ uniform sampler2D u_normalMap;
 
 export const shader = {
   vs: `# version 300 es
-in vec4 a_position;
-in vec4 a_normal;
-in vec2 a_texcoord;
+  layout (location = 0) in vec3 aPos;
+  layout (location = 1) in vec3 aNormal;
+  layout (location = 2) in vec2 aTexCoords;
 
-uniform mat4 u_world;
-uniform mat4 u_view;
-uniform mat4 u_projection;
+  out vec2 TexCoords;
 
-uniform mat4 u_worldInvTranspose;
+  uniform mat4 model;
+  uniform mat4 view;
+  uniform mat4 projection;
 
-${commonShader}
-    
-out vec3 v_normal;
-out vec4 v_pos;
-out vec2 v_texcoord;
+  void main() {
+    TexCoords = aTexCoords;
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
+  }
 
-void main(){
-    gl_Position = u_projection * u_view * u_world * a_position;
-    v_normal = normalize((u_worldInvTranspose * a_normal).xyz);
-    v_pos = gl_Position;
-    v_texcoord = a_texcoord;
-}
 `,
   fs: `# version 300 es
 precision highp float;
 
-${commonShader}
+out vec4 FragColor;
 
-uniform vec3 cameraPosition;
-in vec3 v_normal;
-in vec4 v_pos;
-in vec2 v_texcoord;
+in vec2 TexCoords;
 
-vec3 blinnPhong(
-    vec3 lightStrength,
-    vec3 positionToLightDirection, 
-    vec3 normal,
-    vec3 positionToEye,
-    vec3 ambient, 
-    vec3 diffuse,
-    vec3 specular,
-    float shininess){
-    vec3 hVector = normalize(positionToEye + positionToLightDirection);
-    float htodn = max(0.0, dot(normal, hVector));
-    vec3 calcSpecular = specular * pow(htodn,shininess) * lightStrength;
+uniform sampler2D texture_diffuse1;
 
-    return ambient + diffuse * lightStrength + calcSpecular;
+void main()
+{    
+    FragColor = texture(texture_diffuse1, TexCoords);
 }
-
-vec3 directLight(
-    vec3 lightStrength,
-    vec3 lightDirection,
-    vec3 lightPosition,
-    vec3 ambient,
-    vec3 diffuse,
-    vec3 specular,
-    float shininess,
-    vec3 normal,
-    vec3 positionToEye
-) {
-    vec3 positionToLightDirection = -lightDirection;
-
-    float ndotl = max(0.0, dot(normal, positionToLightDirection));
-    vec3 calculatedLightStrength = lightStrength * ndotl;
-
-    return blinnPhong(
-        calculatedLightStrength,
-        positionToLightDirection,
-        normal,
-        positionToEye,
-        ambient,
-        diffuse,
-        specular,
-        shininess
-    );
-}
-
-out vec4 outColor;
-
-void main(){
-    vec3 defaultDiffuse = u_materialDiffuse;
-
-    vec4 diffuseMapColor = texture(u_diffuseMap, v_texcoord);
-    defaultDiffuse = defaultDiffuse * diffuseMapColor.xyz;
-
-    vec3 toEye = normalize(cameraPosition - v_pos.xyz);
-    vec3 color = directLight(u_lightStrength, 
-        u_lightDirection, 
-        u_lightPosition, 
-        u_materialAmbient, 
-        defaultDiffuse, 
-        u_materialSpecular, 
-        u_materialShininess, 
-        v_normal, 
-        toEye
-    );
-
-    outColor = vec4(color.xyz,1);
-}  
 `,
 };
