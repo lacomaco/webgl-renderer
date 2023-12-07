@@ -10,5 +10,5 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd D:\T&E SIMULATION\nowel\MyBook\Having Fun\Blender\Jualan 3d\electric train\Kereta_Api\textures\electrictrain.png
+map_Kd electrictrain.png
 map_Bump -bm 0.500000 electrictrain_n.png
