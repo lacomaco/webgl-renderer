@@ -11,11 +11,7 @@ export class Model {
 
     private meshes: Mesh[] = [];
     private directory: string = '';
-    /*
-    fbx일 경우엔 directoryPath만
-
-    obj경우엔 obj, mtl 둘다 채워주세요 ~ㅇㅅㅇ~
-    */
+    
    fbxLoader = new FBXLoader();
    objLoader = new OBJLoader();
    mtlLoader = new MTLLoader();
