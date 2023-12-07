@@ -1,15 +1,22 @@
-import { Model } from "../models/model";
-import { ThreeDObject } from "../models/three-d-object";
+import { Model } from "../loader/model";
+import { Shader } from "../shader/shader";
+import {shader} from '../shader/modelShader';
 
 export class Renderer {
   canvas = document.createElement("canvas");
-  gl = this.canvas.getContext("webgl2");
+  gl = this.canvas.getContext("webgl2") as WebGL2RenderingContext;
 
-  boxModel = new Model("./src/assets/windmill/windmill.json", this.gl);
+  zelda = new Model(this.gl,
+    "./src/assets/zelda/zeldaPosed001.fbx");
 
-  renderList: ThreeDObject[] = [];
+  shader: Shader;
 
   constructor() {
+    this.shader = new Shader(
+      shader.vs,
+      shader.fs,
+      this.gl,
+    );
     this.initialize();
   }
 
@@ -29,7 +36,7 @@ export class Renderer {
     this.gl.clearDepth(1.0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     this.gl.clearColor(1, 0, 0, 0);
-    this.boxModel.render();
+    this.zelda.draw(this.shader);
   }
 
   keepRerender() {
