@@ -72,10 +72,4 @@ export class Model {
         three mesh -> mesh로 변환해주세요 ~ㅇㅅㅇ~
         */
     }
-
-    async loadMeterialTexture() {
-        /*
-        mtl 파일을 로드해서 텍스처를 로드해주세요 ~ㅇㅅㅇ~
-        */
-    }
 }
