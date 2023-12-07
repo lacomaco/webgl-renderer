@@ -1,4 +1,5 @@
 import { Shader } from "../shader/shader";
+import { textureMap } from "./model";
 
 // sum: 8
 export interface Vertex {
@@ -57,7 +58,10 @@ export class Mesh {
       }
 
       shader.setInt("material." + name + number, i);
-      this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[i].id);
+      this.gl.bindTexture(
+        this.gl.TEXTURE_2D, 
+        textureMap.get(this.textures[i].id) as WebGLTexture
+      );
     }
     this.gl.activeTexture(this.gl.TEXTURE0);
 
@@ -69,7 +73,7 @@ export class Mesh {
       0,
     );
     // unbind
-    this.gl.bindVertexArray(0);
+    this.gl.bindVertexArray(null);
   }
 
   setupMesh(): void {
@@ -120,7 +124,7 @@ export class Mesh {
     );
 
     // unbind
-    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, 0);
+    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
   }
 
   vertexSerialization() {
