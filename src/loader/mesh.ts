@@ -52,6 +52,7 @@ export class Mesh {
     xIncrease: 0.008,
     currentYRotate: 0,
     yIncrease: 0.008,
+    scale:1,
   };
 
   constructor(
@@ -62,6 +63,18 @@ export class Mesh {
     private mesh: TMESH,
   ) {
     this.setupMesh();
+  }
+
+  setScale(scale: number) {
+    this.worldData.scale = scale;
+  }
+
+  setRotateX(x: number) {
+    this.worldData.currentXRotate = x;
+  }
+
+  setRotateY(y: number) {
+    this.worldData.currentYRotate = y;
   }
 
   setupMesh(): void {
@@ -129,12 +142,13 @@ export class Mesh {
     camera.setProjectionUniform(this.gl, shader.program);
 
     const defaultModel = glm.mat4.create();
-    glm.mat4.scale(defaultModel, defaultModel, [0.3, 0.3, 0.3]);
+    glm.mat4.scale(defaultModel, defaultModel, [
+      this.worldData.scale,
+      this.worldData.scale,
+      this.worldData.scale,
+    ]);
     glm.mat4.rotateX(defaultModel, defaultModel, this.worldData.currentXRotate);
     glm.mat4.rotateY(defaultModel, defaultModel, this.worldData.currentYRotate);
-
-    this.worldData.currentXRotate += this.worldData.xIncrease;
-    this.worldData.currentYRotate += this.worldData.yIncrease;
 
     shader.setMat4("model", defaultModel);
 

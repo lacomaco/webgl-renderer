@@ -20,7 +20,6 @@ import {
   MeshLambertMaterial,
   LoadingManager,
   MeshPhongMaterial,
-  MeshMatcapMaterial,
 } from "three";
 
 export const textureMap = new Map<number, any>();
@@ -38,6 +37,14 @@ export class Model {
 
   static defaultTexture = undefined;
 
+  modelWorldData = {
+    currentXRotate: 0,
+    xIncrease: 0.008,
+    currentYRotate: 0,
+    yIncrease: 0.008,
+    scale:1,
+  };
+
   constructor(
     // 나중에 undefind 지우고 실구현할거임
     private gl: WebGL2RenderingContext,
@@ -47,9 +54,24 @@ export class Model {
     this.init();
   }
 
+  setScale(scale:number){
+    this.modelWorldData.scale = scale;
+  }
+
+  setRotateX(x: number) {
+    this.modelWorldData.currentXRotate = x;
+  }
+
+  setRotateY(y: number) {
+    this.modelWorldData.currentYRotate = y;
+  }
+
   draw(shader: Shader) {
     if (this.meshes.length === 0) return;
     this.meshes.forEach((mesh) => {
+      mesh.setScale(this.modelWorldData.scale);
+      mesh.setRotateX(this.modelWorldData.currentXRotate);
+      mesh.setRotateY(this.modelWorldData.currentYRotate);
       mesh.draw(shader);
     });
   }
