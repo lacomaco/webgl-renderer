@@ -13,29 +13,21 @@
  */
 
 const commonShader = `
-// Light 구조
-uniform vec3 u_lightStrength;
-uniform vec3 u_lightDirection;
-uniform vec3 u_lightPosition;
-// Light 구조 끝
+struct Light {
+  vec3 lightStrength;
+  vec3 lightDirection;
+  vec3 lightPosition;
+};
 
-// Material 구조
-uniform vec3 u_materialAmbient;
-uniform vec3 u_materialDiffuse;
-uniform vec3 u_materialSpecular;
-uniform float u_materialShininess;
-// Material 구조 끝
-
-// image
-uniform int u_ambientuse;
-uniform int u_diffuseuse;
-uniform int u_specularuse;
-uniform int u_normaluse;
-
-uniform sampler2D u_ambientMap;
-uniform sampler2D u_diffuseMap;
-uniform sampler2D u_specularMap;
-uniform sampler2D u_normalMap;
+struct Material {
+  sampler2D texture_diffuse1;
+  sampler2D texture_specular1;
+  sampler2D texture_normal1;
+  vec3 ambient;
+  vec3 diffuse;
+  vec3 specular;
+  float shininess;
+};
 `;
 
 export const shader = {
@@ -43,6 +35,7 @@ export const shader = {
   layout (location = 0) in vec4 aPos;
   layout (location = 1) in vec4 aNormal;
   layout (location = 2) in vec2 aTexCoords;
+  ${commonShader}
 
   out vec2 TexCoords;
 
@@ -58,12 +51,7 @@ export const shader = {
 `,
   fs: `# version 300 es
 precision highp float;
-
-struct Material {
-  sampler2D texture_diffuse1;
-  vec3 diffuse;
-  vec3 specular;
-};
+${commonShader}
 
 uniform Material material;
 
