@@ -26,6 +26,8 @@ export const textureMap = new Map<number, any>();
 
 const manager = new LoadingManager();
 
+let modelLoadCallbackQueue: any[] = [];
+
 export class Model {
   public isModelLoaded = new BehaviorSubject(false);
 
@@ -77,11 +79,22 @@ export class Model {
   }
 
   private async init() {
-    const result = await this.loadModel();
-    manager.onLoad = () => {
-      this.processNode(result);
-      this.disposeLoadeObj(result);
-    };
+    try{
+      const result = await this.loadModel();
+      modelLoadCallbackQueue.push(
+        () => {
+          this.processNode(result);
+          this.disposeLoadeObj(result);
+          this.isModelLoaded.next(true);
+        }
+      );
+      manager.onLoad = () => {
+        modelLoadCallbackQueue.forEach(callback => callback());
+        modelLoadCallbackQueue = [];
+      };
+    }catch(e){
+      console.error(e);
+    }
   }
 
   private loadModel(): Promise<Group> {
@@ -93,6 +106,9 @@ export class Model {
 
           this.objLoader.load(this.directoryPath, (obj) => {
             resolve(obj);
+          },()=>{},(e)=>{
+            console.error(e);  
+            reject(e)
           });
         });
 
@@ -101,6 +117,9 @@ export class Model {
 
       this.fbxLoader.load(this.directoryPath, (obj) => {
         resolve(obj);
+      },()=>{},(e)=>{
+        console.error(e);
+        reject(e)
       });
     });
   }

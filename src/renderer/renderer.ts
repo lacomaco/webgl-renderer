@@ -11,27 +11,31 @@ export class Renderer {
   zelda = new Model(this.gl,"./src/assets/zelda/zeldaPosed001.fbx");
 
   
-  /*
+  
+  
   chair = new Model(
     this.gl,
     "./src/assets/chair/chair.obj",
     "./src/assets/chair/chair.mtl",
   );
-  */
+  
+  
   
 
-  shader: Shader;
+  zeldaShader: Shader;
+  chairShader: Shader;
 
   constructor() {
-    this.shader = new Shader(shader.vs, shader.fs, this.gl);
-    //this.chair.setScale(0.3);
+    this.zeldaShader = new Shader(shader.vs, shader.fs, this.gl);
+    this.chairShader = new Shader(shader.vs, shader.fs, this.gl);
+    this.chair.setScale(0.3);
     this.zelda.setScale(0.01);
     this.initialize();
   }
 
   chairUpdate() {
-    //this.chair.modelWorldData.currentXRotate += 0.001;
-    //this.chair.modelWorldData.currentYRotate += 0.001;
+    this.chair.modelWorldData.currentXRotate += 0.001;
+    this.chair.modelWorldData.currentYRotate += 0.001;
   }
 
   zeldaUpdate() {
@@ -86,8 +90,8 @@ export class Renderer {
     this.gl.clearDepth(1.0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     this.gl.clearColor(1, 0, 0, 0);
-    this.zelda.draw(this.shader);
-    //this.chair.draw(this.shader);
+    this.zelda.draw(this.zeldaShader);
+    this.chair.draw(this.chairShader);
   }
 
   keepRerender() {
