@@ -3,6 +3,7 @@ import { Shader } from "../shader/shader";
 import { textureMap } from "./model";
 import { Mesh as TMESH } from "three";
 import * as glm from "gl-matrix";
+import { directLight } from "../caremalight/directLight";
 
 // sum: 8
 export interface Vertex {
@@ -137,9 +138,12 @@ export class Mesh {
     shader.use();
     this.gl.bindVertexArray(this.vao);
 
-    //camera.setCameraPositionUniform(this.gl, shader.program);
+    // camera 셋업
+    camera.setCameraPositionUniform(this.gl, shader.program);
     camera.setViewUniform(this.gl, shader.program);
     camera.setProjectionUniform(this.gl, shader.program);
+
+    directLight.setLightInfo(this.gl, shader.program);
 
     const defaultModel = glm.mat4.create();
     glm.mat4.scale(defaultModel, defaultModel, [
@@ -149,6 +153,12 @@ export class Mesh {
     ]);
     glm.mat4.rotateX(defaultModel, defaultModel, this.worldData.currentXRotate);
     glm.mat4.rotateY(defaultModel, defaultModel, this.worldData.currentYRotate);
+
+    const modelInverseTranspose = glm.mat4.create();
+    glm.mat4.invert(modelInverseTranspose, defaultModel);
+    glm.mat4.transpose(modelInverseTranspose, modelInverseTranspose);
+
+    shader.setMat4("modelInverseTranspose", modelInverseTranspose);
 
     shader.setMat4("model", defaultModel);
 

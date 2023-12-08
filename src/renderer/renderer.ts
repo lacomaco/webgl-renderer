@@ -8,27 +8,35 @@ export class Renderer {
   canvas = document.createElement("canvas");
   gl = this.canvas.getContext("webgl2") as WebGL2RenderingContext;
 
-  //zelda = new Model(this.gl,"./src/assets/zelda/zeldaPosed001.fbx");
+  zelda = new Model(this.gl,"./src/assets/zelda/zeldaPosed001.fbx");
 
   
+  /*
   chair = new Model(
     this.gl,
     "./src/assets/chair/chair.obj",
     "./src/assets/chair/chair.mtl",
   );
+  */
   
 
   shader: Shader;
 
   constructor() {
     this.shader = new Shader(shader.vs, shader.fs, this.gl);
-    this.chair.setScale(0.3);
+    //this.chair.setScale(0.3);
+    this.zelda.setScale(0.01);
     this.initialize();
   }
 
   chairUpdate() {
-    this.chair.modelWorldData.currentXRotate += 0.001;
-    this.chair.modelWorldData.currentYRotate += 0.001;
+    //this.chair.modelWorldData.currentXRotate += 0.001;
+    //this.chair.modelWorldData.currentYRotate += 0.001;
+  }
+
+  zeldaUpdate() {
+    this.zelda.modelWorldData.currentXRotate += 0.001;
+    this.zelda.modelWorldData.currentYRotate += 0.001;
   }
 
   createWhiteDefaultTexture() {
@@ -70,15 +78,16 @@ export class Renderer {
 
   render() {
     if (!this.gl) return;
-    this.chairUpdate();
+    //this.chairUpdate();
+    this.zeldaUpdate();
     this.gl.enable(this.gl.CULL_FACE);
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.depthFunc(this.gl.LEQUAL);
     this.gl.clearDepth(1.0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     this.gl.clearColor(1, 0, 0, 0);
-    //this.zelda.draw(this.shader);
-    this.chair.draw(this.shader);
+    this.zelda.draw(this.shader);
+    //this.chair.draw(this.shader);
   }
 
   keepRerender() {

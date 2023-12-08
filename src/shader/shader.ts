@@ -152,7 +152,7 @@ export class Shader {
     );
 
     if (!isSuccess) {
-      console.error(`컴파일 실패 오류!`);
+      console.error(`${type} 컴파일 실패 오류!`);
       console.error(this.gl.getShaderInfoLog(shader));
       this.cleanUp();
       throw Error;
